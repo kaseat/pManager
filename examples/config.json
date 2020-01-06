@@ -1,0 +1,7 @@
+{
+    "mongoURL": "mongodb://localhost:27017",
+    "dbName": "tcs",
+    "tcsToken": "SANDBOX TOKEN",
+    "tcsTimeout": 5,
+    "syncFromTimestamp": 1575158400
+}
