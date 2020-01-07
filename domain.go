@@ -12,6 +12,7 @@ type OperationType string
 
 // Operation represents market operation
 type Operation struct {
+	OperationID   string        `json:"id" bson:"_id,omitempty"`
 	Currency      Currency      `json:"currency"`
 	Price         float64       `json:"price"`
 	Quantity      int           `json:"quantity"`
