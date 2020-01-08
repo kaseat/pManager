@@ -67,19 +67,58 @@ func getOperations(filter primitive.M, findOptions *options.FindOptions) ([]Oper
 	return results, err
 }
 
-// GetBalance returns balance of specified currency
-func GetBalance(curr Currency) float64 {
-	op, _ := GetAllOperations()
-	sum := float64(0)
-	for _, val := range op {
-		if val.Currency != curr {
-			continue
-		}
+// GetBalanceByCurrency returns balance of specified currency
+func GetBalanceByCurrency(curr Currency) (float64, error) {
+	op, err := getOperations(bson.M{"currency": curr}, options.Find())
+	if err != nil {
+		return 0, err
+	}
+	return getSum(op), nil
+}
 
-		amount := val.Price * float64(val.Quantity)
-		if val.OperationType == PayIn {
+// GetBalanceByCurrencyTillDate returns balance of specified currency till specified date
+func GetBalanceByCurrencyTillDate(curr Currency, dt time.Time) (float64, error) {
+	filter := bson.M{"$and": []interface{}{
+		bson.M{"currency": curr},
+		bson.M{"datetime": bson.M{"$lte": dt}},
+	}}
+	op, err := getOperations(filter, options.Find())
+	if err != nil {
+		return 0, err
+	}
+	return getSum(op), nil
+}
+
+// GetBalanceByFigi returns balance of specified figi
+func GetBalanceByFigi(figi string) (float64, error) {
+	op, err := getOperations(bson.M{"figi": figi}, options.Find())
+	if err != nil {
+		return 0, err
+	}
+	return getSum(op), nil
+}
+
+// GetBalanceByFigiTillDate returns balance of specified figi till specified date
+func GetBalanceByFigiTillDate(figi string, dt time.Time) (float64, error) {
+	filter := bson.M{"$and": []interface{}{
+		bson.M{"figi": bson.M{"$eq": figi}},
+		bson.M{"datetime": bson.M{"$lte": dt}},
+	}}
+	op, err := getOperations(filter, options.Find())
+	if err != nil {
+		return 0, err
+	}
+	return getSum(op), nil
+}
+
+func getSum(operations []Operation) float64 {
+	sum := float64(0)
+	for _, opertion := range operations {
+		amount := opertion.Price * float64(opertion.Quantity)
+		switch opertion.OperationType {
+		case PayIn, Sell:
 			sum += amount
-		} else {
+		default:
 			sum -= amount
 		}
 	}
