@@ -1,6 +1,7 @@
 package tcssync
 
 import (
+	"errors"
 	"log"
 	"time"
 
@@ -11,43 +12,53 @@ import (
 )
 
 // AddOperation adds operation to storage
-func AddOperation(op Operation) string {
+func AddOperation(op Operation) (string, error) {
+	op.OperationID = ""
 	res, err := db.operations.InsertOne(db.context(), op)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	if id, ok := res.InsertedID.(primitive.ObjectID); ok {
-		return id.Hex()
+		return id.Hex(), nil
 	}
 
-	log.Fatal("Not objectid.ObjectID")
-	return "-1"
+	return "", errors.New("Filed convert 'primitive.ObjectID' to 'string'")
 }
 
-// GetOperation gets operation by id
-func GetOperation(operationID string) (Operation, error) {
+// GetOperationByID gets operation by id
+func GetOperationByID(operationID string) (Operation, error) {
 	var result Operation
-	objID, _ := primitive.ObjectIDFromHex(operationID)
-	err := db.operations.FindOne(db.context(), bson.M{"_id": objID}).Decode(&result)
+	objID, err := primitive.ObjectIDFromHex(operationID)
 	if err != nil {
-		log.Fatal(err)
-		return Operation{}, err
+		return result, err
 	}
-	return result, nil
+	err = db.operations.FindOne(db.context(), bson.M{"_id": objID}).Decode(&result)
+	return result, err
 }
 
 // GetAllOperations finds all available operations at the moment
 func GetAllOperations() ([]Operation, error) {
+	filter := bson.M{}
 	findOptions := options.Find()
-	findOptions.SetSort(bson.D{{Key: "datetime", Value: 1}})
+	findOptions.SetSort(bson.M{"datetime": 1})
+	return getOperations(filter, findOptions)
+}
 
+// GetAllOperationsByFigi finds all available operations for the specified figi at the moment
+func GetAllOperationsByFigi(figi string) ([]Operation, error) {
+	filter := bson.M{"figi": figi}
+	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"datetime": 1})
+	return getOperations(filter, findOptions)
+}
+
+func getOperations(filter primitive.M, findOptions *options.FindOptions) ([]Operation, error) {
 	ctx := db.context()
-	cur, err := db.operations.Find(ctx, bson.M{}, findOptions)
+	cur, err := db.operations.Find(ctx, filter, findOptions)
 	defer cur.Close(ctx)
 
 	if err != nil {
-		log.Fatal("getAll: ", err)
 		return nil, err
 	}
 
