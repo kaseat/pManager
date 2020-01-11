@@ -12,7 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type config struct {
+// Config represents configuration
+type Config struct {
 	MongoURL   string `json:"mongoURL"`
 	DbName     string `json:"dbName"`
 	TcsToken   string `json:"tcsToken"`
@@ -37,7 +38,7 @@ type tinkoff struct {
 
 var tcs tinkoff
 var db database
-var cfg config
+var cfg Config
 
 // Init filler
 func Init(configPath string) {
