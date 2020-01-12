@@ -136,7 +136,7 @@ func GetPortfolio(portfolioID string) (Portfolio, error) {
 }
 
 // UpdatePortfolio updates current portfolio
-func (p Portfolio) UpdatePortfolio() (bool, error) {
+func (p *Portfolio) UpdatePortfolio() (bool, error) {
 
 	objID, err := primitive.ObjectIDFromHex(p.PortfolioID)
 	if err != nil {
@@ -214,6 +214,20 @@ func (p *Portfolio) AddOperation(op Operation) (string, error) {
 	}
 
 	return "", errors.New("Filed convert 'primitive.ObjectID' to 'string'")
+}
+
+// DeleteAllOperations removes all operations associated with given portfolio
+func (p *Portfolio) DeleteAllOperations() (int64, error) {
+	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
+	if err != nil {
+		return 0, err
+	}
+	filter := bson.M{"portfolio": pid}
+	res, err := db.operations.DeleteMany(db.context(), filter)
+	if err != nil {
+		return 0, err
+	}
+	return res.DeletedCount, nil
 }
 
 // GetOperationByID gets operation by id
@@ -306,7 +320,7 @@ func (p *Portfolio) GetBalanceByFigi(figi string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return getSum(op), nil
+	return -getSum(op), nil
 }
 
 // GetBalanceByFigiTillDate returns balance of specified figi till specified date
@@ -325,7 +339,7 @@ func (p *Portfolio) GetBalanceByFigiTillDate(figi string, dt time.Time) (float64
 	if err != nil {
 		return 0, err
 	}
-	return getSum(op), nil
+	return -getSum(op), nil
 }
 
 func getSum(operations []Operation) float64 {

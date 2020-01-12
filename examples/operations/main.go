@@ -1,15 +1,9 @@
 package main
 
 import (
-	// "bufio"
-	// "encoding/json"
 	"fmt"
-	"time"
-	// "os"
-	// "time"
-
-	// "github.com/kaseat/tcssync"
 	"github.com/kaseat/tcssync/portfolio"
+	"time"
 )
 
 func main() {
@@ -32,12 +26,21 @@ func manageOperations() {
 		return
 	}
 
-	if len(ps) != 1 {
+	if len(ps) != 0 {
+		for _, p := range ps {
+			n, err := p.DeleteAllOperations()
+			if err != nil {
+				fmt.Println("Something went wrong:", err)
+				return
+			}
+			fmt.Println("Successfully removed", n, "operations from", p.Name)
+		}
 		err = portfolio.DeleteAllPortfolios()
 		if err != nil {
 			fmt.Println("Something went wrong:", err)
 			return
 		}
+		fmt.Println("Successfully removed all portfolios")
 
 		p, err = portfolio.AddPortfolio("Awesome portfolio", "My awesome portfolio")
 		if err != nil {
@@ -136,17 +139,59 @@ func manageOperations() {
 	}
 	fmt.Println("Successfully added opeation with id:", opID)
 
-	// now get all operations
-
+	// get all operations
 	var ops []portfolio.Operation
 	ops, err = p.GetAllOperations()
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
 	}
-
-	fmt.Println("Successfully fetched ", len(ops), "operations from", p.Name, "portfolio:")
+	fmt.Println("Successfully fetched", len(ops), "operations from", p.Name)
 	for _, op := range ops {
 		fmt.Println(op)
 	}
+
+	// get all operations with figi BBG005DXDPK9
+	ops, err = p.GetAllOperationsByFigi("BBG005DXDPK9")
+	if err != nil {
+		fmt.Println("Something went wrong:", err)
+		return
+	}
+	fmt.Println("Successfully fetched", len(ops), "operations from", p.Name)
+	for _, op := range ops {
+		fmt.Println(op)
+	}
+
+	// get actual RUB balance
+	bal, err := p.GetBalanceByCurrency(portfolio.RUB)
+	if err != nil {
+		fmt.Println("Something went wrong:", err)
+		return
+	}
+	fmt.Println("Current ballance is", bal, portfolio.RUB)
+
+	// get RUB balance on date
+	today := time.Now().UTC().AddDate(0, 0, 1)
+	bal, err = p.GetBalanceByCurrencyTillDate(portfolio.RUB, today)
+	if err != nil {
+		fmt.Println("Something went wrong:", err)
+		return
+	}
+	fmt.Println("Ballance on", today, "is", bal, portfolio.RUB)
+
+	// get actual BBG005DXDPK9 balance
+	bal, err = p.GetBalanceByFigi("BBG005DXDPK9")
+	if err != nil {
+		fmt.Println("Something went wrong:", err)
+		return
+	}
+	fmt.Println("Current ballance for BBG005DXDPK9 is", bal, portfolio.RUB)
+
+	// get BBG005DXDPK9 balance on date
+	bal, err = p.GetBalanceByFigiTillDate("BBG005DXDPK9", today)
+	if err != nil {
+		fmt.Println("Something went wrong:", err)
+		return
+	}
+	fmt.Println("Ballance for BBG005DXDPK9 on", today, "is", bal, portfolio.RUB)
 }
