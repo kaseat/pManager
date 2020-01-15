@@ -55,7 +55,7 @@ func manageOperations() {
 	op := portfolio.Operation{
 		Currency:      portfolio.RUB,
 		Price:         1,
-		Quantity:      10000,
+		Volume:        10000,
 		FIGI:          "RUB",
 		DateTime:      time.Now(),
 		OperationType: portfolio.PayIn}
@@ -78,7 +78,7 @@ func manageOperations() {
 	op = portfolio.Operation{
 		Currency:      portfolio.RUB,
 		Price:         679,
-		Quantity:      3,
+		Volume:        3,
 		FIGI:          "BBG005DXDPK9",
 		DateTime:      time.Now().AddDate(0, 0, 1),
 		OperationType: portfolio.Buy}
@@ -95,7 +95,7 @@ func manageOperations() {
 	op = portfolio.Operation{
 		Currency:      portfolio.RUB,
 		Price:         620,
-		Quantity:      5,
+		Volume:        5,
 		FIGI:          "BBG00NRFC2X2",
 		DateTime:      time.Now().AddDate(0, 0, 1),
 		OperationType: portfolio.Buy}
@@ -111,7 +111,7 @@ func manageOperations() {
 	op = portfolio.Operation{
 		Currency:      portfolio.RUB,
 		Price:         625,
-		Quantity:      2,
+		Volume:        2,
 		FIGI:          "BBG00NRFC2X2",
 		DateTime:      time.Now().AddDate(0, 0, 2),
 		OperationType: portfolio.Sell}
@@ -127,7 +127,7 @@ func manageOperations() {
 	op = portfolio.Operation{
 		Currency:      portfolio.RUB,
 		Price:         690,
-		Quantity:      1,
+		Volume:        1,
 		FIGI:          "BBG005DXDPK9",
 		DateTime:      time.Now().AddDate(0, 0, 2),
 		OperationType: portfolio.Sell}
@@ -187,6 +187,14 @@ func manageOperations() {
 	}
 	fmt.Println("Current ballance for BBG005DXDPK9 is", bal, portfolio.RUB)
 
+	// get actual BBG005DXDPK9 average price
+	bal, err = p.GetAveragePriceByFigi("BBG005DXDPK9")
+	if err != nil {
+		fmt.Println("Something went wrong:", err)
+		return
+	}
+	fmt.Println("Current average price for BBG005DXDPK9 is", bal, portfolio.RUB)
+
 	// get BBG005DXDPK9 balance on date
 	bal, err = p.GetBalanceByFigiTillDate("BBG005DXDPK9", today)
 	if err != nil {
@@ -194,4 +202,12 @@ func manageOperations() {
 		return
 	}
 	fmt.Println("Ballance for BBG005DXDPK9 on", today, "is", bal, portfolio.RUB)
+
+	// get operation by id
+	op, err = p.GetOperationByID(ops[0].OperationID)
+	if err != nil {
+		fmt.Println("Something went wrong:", err)
+		return
+	}
+	fmt.Println("Successfully fetched", op.OperationID, "operation from", p.Name)
 }

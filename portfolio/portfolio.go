@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/oleiade/lane"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,18 +24,10 @@ type Operation struct {
 	OperationID   string    `json:"id" bson:"_id,omitempty"`
 	Currency      Currency  `json:"currency"`
 	Price         float64   `json:"price"`
-	Quantity      int       `json:"quantity"`
+	Volume        int64     `json:"vol"`
 	FIGI          string    `json:"figi"`
 	DateTime      time.Time `json:"date"`
 	OperationType Type      `json:"operationType"`
-}
-
-// Price represents market instrument price at given time
-type Price struct {
-	FIGI     string    `json:"figi"`
-	Price    float64   `json:"price"`
-	Volume   float64   `json:"vol"`
-	DateTime time.Time `json:"datetime"`
 }
 
 // Portfolio represets a range of investments
@@ -89,19 +82,22 @@ var db database
 var cfg Config
 
 // Init portgolio module
-func Init(config Config) {
+func Init(config Config) error {
 	cfg = config
 	db.context = func() context.Context { return context.Background() }
 	clientOptions := options.Client().ApplyURI(cfg.MongoURL)
 	client, err := mongo.NewClient(clientOptions)
 	if err != nil {
+		return err
 	}
 	err = client.Connect(db.context())
 	if err != nil {
+		return err
 	}
 	db.operations = client.Database(cfg.DbName).Collection("Operations")
 	db.portfolios = client.Database(cfg.DbName).Collection("Portfolios")
 	db.prices = client.Database(cfg.DbName).Collection("Prices")
+	return nil
 }
 
 // AddPortfolio adds new potrfolio
@@ -199,7 +195,7 @@ func (p *Portfolio) AddOperation(op Operation) (string, error) {
 		"portfolio":     pid,
 		"currency":      op.Currency,
 		"price":         op.Price,
-		"quantity":      op.Quantity,
+		"volume":        op.Volume,
 		"figi":          op.FIGI,
 		"datetime":      op.DateTime,
 		"operationtype": op.OperationType}
@@ -342,10 +338,28 @@ func (p *Portfolio) GetBalanceByFigiTillDate(figi string, dt time.Time) (float64
 	return -getSum(op), nil
 }
 
+// GetAveragePriceByFigi returns average price of specified figi (FIFO)
+func (p *Portfolio) GetAveragePriceByFigi(figi string) (float64, error) {
+	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
+	if err != nil {
+		return 0, err
+	}
+	filter := bson.M{"$and": []interface{}{
+		bson.M{"portfolio": pid},
+		bson.M{"figi": figi},
+	}}
+	findOptions := options.Find()
+	op, err := getOperations(filter, findOptions)
+	if err != nil {
+		return 0, err
+	}
+	return getAverage(op), nil
+}
+
 func getSum(operations []Operation) float64 {
 	sum := float64(0)
 	for _, opertion := range operations {
-		amount := opertion.Price * float64(opertion.Quantity)
+		amount := opertion.Price * float64(opertion.Volume)
 		switch opertion.OperationType {
 		case PayIn, Sell:
 			sum += amount
@@ -368,4 +382,44 @@ func getOperations(filter primitive.M, findOptions *options.FindOptions) ([]Oper
 	var results []Operation
 	cur.All(ctx, &results)
 	return results, err
+}
+
+func getAverage(ops []Operation) float64 {
+	d := lane.NewDeque()
+	for _, op := range ops {
+		if op.OperationType == Buy {
+			d.Append(op)
+		} else {
+			for {
+				if d.Empty() {
+					break
+				}
+				o := d.Shift().(Operation)
+				if o.Volume-op.Volume <= 0 {
+					op.Volume -= o.Volume
+				} else {
+					o.Volume -= op.Volume
+					d.Prepend(o)
+					break
+				}
+			}
+		}
+	}
+
+	cost, vol := 0.0, 0.0
+	for {
+		if d.Empty() {
+			break
+		}
+		op := d.Pop().(Operation)
+		v := float64(op.Volume)
+		cost += op.Price * v
+		vol += v
+	}
+
+	result := 0.0
+	if vol != 0 {
+		result = cost / vol
+	}
+	return result
 }
