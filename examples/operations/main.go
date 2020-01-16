@@ -91,10 +91,26 @@ func manageOperations() {
 	}
 	fmt.Println("Successfully added opeation with id:", opID)
 
-	// add another buy operation
+	// add buy operation
 	op = portfolio.Operation{
 		Currency:      portfolio.RUB,
 		Price:         620,
+		Volume:        1,
+		FIGI:          "BBG00NRFC2X2",
+		DateTime:      time.Now().AddDate(0, 0, 1),
+		OperationType: portfolio.Buy}
+
+	opID, err = p.AddOperation(op)
+	if err != nil {
+		fmt.Println("Something went wrong:", err)
+		return
+	}
+	fmt.Println("Successfully added opeation with id:", opID)
+
+	// add buy operation
+	op = portfolio.Operation{
+		Currency:      portfolio.RUB,
+		Price:         622,
 		Volume:        5,
 		FIGI:          "BBG00NRFC2X2",
 		DateTime:      time.Now().AddDate(0, 0, 1),
@@ -123,7 +139,7 @@ func manageOperations() {
 	}
 	fmt.Println("Successfully added opeation with id:", opID)
 
-	// add another sell operation
+	// add sell operation
 	op = portfolio.Operation{
 		Currency:      portfolio.RUB,
 		Price:         690,
@@ -188,12 +204,20 @@ func manageOperations() {
 	fmt.Println("Current ballance for BBG005DXDPK9 is", bal, portfolio.RUB)
 
 	// get actual BBG005DXDPK9 average price
-	bal, err = p.GetAveragePriceByFigi("BBG005DXDPK9")
+	bal, err = p.GetAveragePriceByFigi("BBG00NRFC2X2")
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
 	}
 	fmt.Println("Current average price for BBG005DXDPK9 is", bal, portfolio.RUB)
+
+	// get BBG00NRFC2X2 balance on date
+	bal, err = p.GetAveragePriceByFigiTillDate("BBG00NRFC2X2", today)
+	if err != nil {
+		fmt.Println("Something went wrong:", err)
+		return
+	}
+	fmt.Println("Average price for BBG00NRFC2X2 on", today, "is", bal, portfolio.RUB)
 
 	// get BBG005DXDPK9 balance on date
 	bal, err = p.GetBalanceByFigiTillDate("BBG005DXDPK9", today)

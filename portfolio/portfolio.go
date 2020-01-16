@@ -356,6 +356,25 @@ func (p *Portfolio) GetAveragePriceByFigi(figi string) (float64, error) {
 	return getAverage(op), nil
 }
 
+// GetAveragePriceByFigiTillDate returns average price of specified figi (FIFO) on specified date
+func (p *Portfolio) GetAveragePriceByFigiTillDate(figi string, dt time.Time) (float64, error) {
+	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
+	if err != nil {
+		return 0, err
+	}
+	filter := bson.M{"$and": []interface{}{
+		bson.M{"portfolio": pid},
+		bson.M{"figi": figi},
+		bson.M{"datetime": bson.M{"$lte": dt}},
+	}}
+	findOptions := options.Find()
+	op, err := getOperations(filter, findOptions)
+	if err != nil {
+		return 0, err
+	}
+	return getAverage(op), nil
+}
+
 func getSum(operations []Operation) float64 {
 	sum := float64(0)
 	for _, opertion := range operations {
