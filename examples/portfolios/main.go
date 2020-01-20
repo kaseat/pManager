@@ -51,7 +51,14 @@ func managePortfolio() {
 	}
 
 	// delete all portfolios
-	err = portfolio.DeleteAllPortfolios()
+	_, err = portfolio.DeletePortfolio(ps[0].PortfolioID)
+	if err != nil {
+		fmt.Println("Something went wrong:", err)
+		return
+	}
+
+	// delete all portfolios
+	_, err = portfolio.DeleteAllPortfolios()
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return

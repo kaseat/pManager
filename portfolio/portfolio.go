@@ -120,15 +120,35 @@ func AddPortfolio(name string, description string) (Portfolio, error) {
 }
 
 // GetPortfolio gets operation by id
-func GetPortfolio(portfolioID string) (Portfolio, error) {
+func GetPortfolio(portfolioID string) (bool, Portfolio, error) {
 	var result Portfolio
+
 	objID, err := primitive.ObjectIDFromHex(portfolioID)
 	if err != nil {
-		return result, err
+		err = errors.New("Invalid portfolio Id")
+		return false, result, err
 	}
+
 	filter := bson.M{"_id": objID}
-	err = db.portfolios.FindOne(db.context(), filter).Decode(&result)
-	return result, err
+	findOptions := options.Find()
+	ctx := db.context()
+
+	cur, err := db.portfolios.Find(ctx, filter, findOptions)
+	defer cur.Close(ctx)
+	if err != nil {
+		return false, result, err
+	}
+
+	hasResult := cur.TryNext(ctx)
+	if !hasResult {
+		return false, result, nil
+	}
+
+	err = cur.Decode(&result)
+	if err != nil {
+		return false, result, err
+	}
+	return true, result, nil
 }
 
 // UpdatePortfolio updates current portfolio
@@ -170,14 +190,52 @@ func GetAllPortfolios() ([]Portfolio, error) {
 	}
 
 	var results []Portfolio
-	cur.All(ctx, &results)
+
+	err = cur.All(ctx, &results)
+	if err != nil {
+		return nil, err
+	}
+
 	return results, err
 }
 
 // DeleteAllPortfolios removes all portfolios
-func DeleteAllPortfolios() error {
+func DeleteAllPortfolios() (bool, error) {
 	ctx := db.context()
-	return db.portfolios.Drop(ctx)
+	filter := bson.M{}
+
+	res, err := db.portfolios.DeleteMany(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+
+	if res.DeletedCount != 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DeletePortfolio removes portfolio by Id
+func DeletePortfolio(portfolioID string) (bool, error) {
+	ctx := db.context()
+
+	objID, err := primitive.ObjectIDFromHex(portfolioID)
+	if err != nil {
+		return false, err
+	}
+
+	filter := bson.M{"_id": objID}
+	res, err := db.portfolios.DeleteOne(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+
+	if res.DeletedCount != 0 {
+		return true, err
+	}
+
+	return false, err
 }
 
 func (p *Portfolio) String() string {

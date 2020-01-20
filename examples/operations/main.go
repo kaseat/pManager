@@ -35,7 +35,7 @@ func manageOperations() {
 			}
 			fmt.Println("Successfully removed", n, "operations from", p.Name)
 		}
-		err = portfolio.DeleteAllPortfolios()
+		_, err = portfolio.DeleteAllPortfolios()
 		if err != nil {
 			fmt.Println("Something went wrong:", err)
 			return
