@@ -156,6 +156,7 @@ func (p *Portfolio) UpdatePortfolio() (bool, error) {
 
 	objID, err := primitive.ObjectIDFromHex(p.PortfolioID)
 	if err != nil {
+		err = errors.New("Invalid portfolio Id")
 		return false, err
 	}
 
@@ -222,6 +223,7 @@ func DeletePortfolio(portfolioID string) (bool, error) {
 
 	objID, err := primitive.ObjectIDFromHex(portfolioID)
 	if err != nil {
+		err = errors.New("Invalid portfolio Id")
 		return false, err
 	}
 
