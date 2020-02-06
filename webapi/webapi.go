@@ -54,6 +54,11 @@ type operationsResponse struct {
 	Operations []portfolio.Operation `json:"operations"`
 }
 
+type singleOperationIDResponse struct {
+	Status      responseStatus `json:"status"`
+	OperationID string         `json:"createdOperationId"`
+}
+
 func main() {
 	cfg := portfolio.Config{
 		MongoURL: "mongodb://localhost:27017",
@@ -71,7 +76,34 @@ func main() {
 	router.HandleFunc("/portfolios/{id}", uptateSinglePortfolio).Methods("PUT")
 	router.HandleFunc("/portfolios/{id}", deleteSinglePortfolio).Methods("DELETE")
 	router.HandleFunc("/portfolios/{id}/operations", readAllOperations).Methods("GET")
+	router.HandleFunc("/portfolios/{id}/operations", createSingleOperation).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8080", router))
+}
+
+func createSingleOperation(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	p := portfolio.Portfolio{PortfolioID: mux.Vars(r)["id"]}
+
+	decoder := json.NewDecoder(r.Body)
+	var op portfolio.Operation
+
+	err := decoder.Decode(&op)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	opID, err := p.AddOperation(op)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp := singleOperationIDResponse{Status: ok, OperationID: opID}
+	bytes, _ := json.Marshal(&resp)
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(bytes)
 }
 
 func readAllOperations(w http.ResponseWriter, r *http.Request) {
