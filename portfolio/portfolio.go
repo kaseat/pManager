@@ -20,7 +20,7 @@ type Type string
 
 // Operation represents market operation
 type Operation struct {
-	PortfolioID   string    `json:"pid" bson:"portfolio"`
+	PortfolioID   string    `json:"pid,omitempty" bson:"portfolio"`
 	OperationID   string    `json:"id" bson:"_id,omitempty"`
 	Currency      Currency  `json:"currency"`
 	Price         float64   `json:"price"`

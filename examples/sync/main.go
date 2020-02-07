@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaseat/tcssync/sync"
+	"github.com/kaseat/pManager/sync"
 )
 
 func main() {

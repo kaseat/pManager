@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaseat/tcssync/portfolio"
+	"github.com/kaseat/pManager/portfolio"
 )
 
 func main() {

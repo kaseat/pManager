@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/kaseat/tcssync/portfolio"
+	"github.com/kaseat/pManager/portfolio"
 )
 
 type responseStatus string
@@ -49,9 +49,9 @@ type singlePortfolioResponse struct {
 }
 
 type operationsResponse struct {
-	Status     responseStatus        `json:"status"`
-	Portfolio  portfolio.Portfolio   `json:"portfolio"`
-	Operations []portfolio.Operation `json:"operations"`
+	Status      responseStatus        `json:"status"`
+	PortfolioID string                `json:"portfolioId"`
+	Operations  []portfolio.Operation `json:"operations"`
 }
 
 type singleOperationIDResponse struct {
@@ -129,7 +129,11 @@ func readAllOperations(w http.ResponseWriter, r *http.Request) {
 		ops = []portfolio.Operation{}
 	}
 
-	resp := operationsResponse{Status: ok, Portfolio: p, Operations: ops}
+	for i := range ops {
+		ops[i].PortfolioID = ""
+	}
+
+	resp := operationsResponse{Status: ok, PortfolioID: p.PortfolioID, Operations: ops}
 	bytes, _ := json.Marshal(&resp)
 
 	w.WriteHeader(http.StatusOK)
