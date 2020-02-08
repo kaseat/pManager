@@ -61,7 +61,13 @@ func ReadAllOperations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ops, err := p.GetAllOperations()
+	figi := r.FormValue("figi")
+	var ops []portfolio.Operation
+	if figi != "" {
+		ops, err = p.GetAllOperationsByFigi(figi)
+	} else {
+		ops, err = p.GetAllOperations()
+	}
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
