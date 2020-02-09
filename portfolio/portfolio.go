@@ -325,6 +325,23 @@ func (p *Portfolio) GetAllOperationsByFigi(figi string) ([]Operation, error) {
 	return getOperations(filter, findOptions)
 }
 
+// GetAllOperationsByFigiTimeBound finds all available operations for the specified figi for specified time range
+func (p *Portfolio) GetAllOperationsByFigiTimeBound(figi string, from time.Time, to time.Time) ([]Operation, error) {
+	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
+	if err != nil {
+		return nil, err
+	}
+	filter := bson.M{"$and": []interface{}{
+		bson.M{"portfolio": pid},
+		bson.M{"figi": figi},
+		bson.M{"datetime": bson.M{"$gte": from}},
+		bson.M{"datetime": bson.M{"$lte": to}},
+	}}
+	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"datetime": 1})
+	return getOperations(filter, findOptions)
+}
+
 // GetBalanceByCurrency returns balance of specified currency
 func (p *Portfolio) GetBalanceByCurrency(curr Currency) (float64, error) {
 	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
