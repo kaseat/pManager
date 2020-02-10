@@ -26,7 +26,7 @@ func main() {
 	router.HandleFunc("/portfolios/{id}", api.ReadSinglePortfolio).Methods("GET")
 	router.HandleFunc("/portfolios/{id}", api.UptateSinglePortfolio).Methods("PUT")
 	router.HandleFunc("/portfolios/{id}", api.DeleteSinglePortfolio).Methods("DELETE")
-	router.HandleFunc("/portfolios/{id}/operations", api.ReadAllOperations).Methods("GET")
+	router.HandleFunc("/portfolios/{id}/operations", api.ReadOperations).Methods("GET")
 	router.HandleFunc("/portfolios/{id}/operations", api.CreateSingleOperation).Methods("POST")
 	router.HandleFunc("/portfolios/{id}/operations", api.DeleteAllOperations).Methods("DELETE")
 	router.HandleFunc("/portfolios/{id}/operations/{figi}/average", api.GetAveragePrice).Methods("GET")

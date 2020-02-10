@@ -46,8 +46,8 @@ func CreateSingleOperation(w http.ResponseWriter, r *http.Request) {
 	w.Write(bytes)
 }
 
-// ReadAllOperations gets all operations of specified portfolio
-func ReadAllOperations(w http.ResponseWriter, r *http.Request) {
+// ReadOperations gets all operations of specified portfolio
+func ReadOperations(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id := mux.Vars(r)["id"]
@@ -61,19 +61,10 @@ func ReadAllOperations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	figi := r.FormValue("figi")
-	var ops []portfolio.Operation
-	if figi != "" {
-		ops, err = p.GetAllOperationsByFigi(figi)
-	} else {
-		ops, err = p.GetAllOperations()
-	}
+	ops, err := p.GetOperations(r.FormValue("figi"), r.FormValue("from"), r.FormValue("to"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
-	}
-	if ops == nil {
-		ops = []portfolio.Operation{}
 	}
 
 	for i := range ops {

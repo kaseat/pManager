@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaseat/pManager/portfolio"
 	"time"
+
+	"github.com/kaseat/pManager/portfolio"
 )
 
 func main() {
@@ -157,7 +158,7 @@ func manageOperations() {
 
 	// get all operations
 	var ops []portfolio.Operation
-	ops, err = p.GetAllOperations()
+	ops, err = p.GetOperations("", "", "")
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
@@ -168,7 +169,7 @@ func manageOperations() {
 	}
 
 	// get all operations with figi BBG005DXDPK9
-	ops, err = p.GetAllOperationsByFigi("BBG005DXDPK9")
+	ops, err = p.GetOperations("BBG005DXDPK9", "", "")
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return

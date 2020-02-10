@@ -298,45 +298,36 @@ func (p *Portfolio) GetOperationByID(operationID string) (Operation, error) {
 	return result, err
 }
 
-// GetAllOperations finds all available operations at the moment
-func (p *Portfolio) GetAllOperations() ([]Operation, error) {
+// GetOperations finds operations depending on input prameters
+func (p *Portfolio) GetOperations(figi string, from string, to string) ([]Operation, error) {
 	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
 	if err != nil {
 		return nil, err
 	}
+
 	filter := bson.M{"portfolio": pid}
-	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"datetime": 1})
-	return getOperations(filter, findOptions)
-}
-
-// GetAllOperationsByFigi finds all available operations for the specified figi at the moment
-func (p *Portfolio) GetAllOperationsByFigi(figi string) ([]Operation, error) {
-	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
-	if err != nil {
-		return nil, err
+	and := []interface{}{}
+	hasParams := false
+	if figi != "" {
+		and = append(and, bson.M{"figi": figi})
+		hasParams = true
 	}
-	filter := bson.M{"$and": []interface{}{
-		bson.M{"portfolio": pid},
-		bson.M{"figi": figi},
-	}}
-	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"datetime": 1})
-	return getOperations(filter, findOptions)
-}
 
-// GetAllOperationsByFigiTimeBound finds all available operations for the specified figi for specified time range
-func (p *Portfolio) GetAllOperationsByFigiTimeBound(figi string, from time.Time, to time.Time) ([]Operation, error) {
-	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
-	if err != nil {
-		return nil, err
+	if dtime, err := time.Parse("2006-01-02T15:04:05.000Z0700", from); err == nil {
+		and = append(and, bson.M{"datetime": bson.M{"$gte": dtime}})
+		hasParams = true
 	}
-	filter := bson.M{"$and": []interface{}{
-		bson.M{"portfolio": pid},
-		bson.M{"figi": figi},
-		bson.M{"datetime": bson.M{"$gte": from}},
-		bson.M{"datetime": bson.M{"$lte": to}},
-	}}
+
+	if dtime, err := time.Parse("2006-01-02T15:04:05.000Z0700", to); err == nil {
+		and = append(and, bson.M{"datetime": bson.M{"$lte": dtime}})
+		hasParams = true
+	}
+
+	if hasParams {
+		and = append(and, filter)
+		filter = bson.M{"$and": and}
+	}
+
 	findOptions := options.Find()
 	findOptions.SetSort(bson.M{"datetime": 1})
 	return getOperations(filter, findOptions)
@@ -477,6 +468,10 @@ func getOperations(filter primitive.M, findOptions *options.FindOptions) ([]Oper
 
 	var results []Operation
 	cur.All(ctx, &results)
+
+	if results == nil {
+		results = []Operation{}
+	}
 	return results, err
 }
 
