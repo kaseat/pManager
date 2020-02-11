@@ -13,7 +13,7 @@ import (
 func main() {
 	cfg := portfolio.Config{
 		MongoURL: "mongodb://localhost:27017",
-		DbName:   "tcs",
+		DbName:   "tcs2",
 	}
 	portfolio.Init(cfg)
 
@@ -31,5 +31,5 @@ func main() {
 	router.HandleFunc("/portfolios/{id}/operations", api.DeleteAllOperations).Methods("DELETE")
 	router.HandleFunc("/portfolios/{id}/average", api.GetAveragePrice).Methods("GET")
 	router.HandleFunc("/portfolios/{id}/balance", api.GetBalance).Methods("GET")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8081", router))
 }
