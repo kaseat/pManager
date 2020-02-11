@@ -23,7 +23,8 @@ type Operation struct {
 	PortfolioID   string    `json:"pid,omitempty" bson:"portfolio"`
 	OperationID   string    `json:"id" bson:"_id,omitempty"`
 	Currency      Currency  `json:"currency"`
-	Price         float64   `json:"price"`
+	Price         int64     `json:"-" bson:"price"`
+	PriceF        float64   `json:"price" bson:"-"`
 	Volume        int64     `json:"vol"`
 	FIGI          string    `json:"figi"`
 	DateTime      time.Time `json:"date"`
@@ -254,7 +255,7 @@ func (p *Portfolio) AddOperation(op Operation) (string, error) {
 	doc := bson.M{
 		"portfolio":     pid,
 		"currency":      op.Currency,
-		"price":         op.Price,
+		"price":         int64(op.PriceF * 1e6),
 		"volume":        op.Volume,
 		"figi":          op.FIGI,
 		"datetime":      op.DateTime,
@@ -334,7 +335,7 @@ func (p *Portfolio) GetOperations(figi string, from string, to string) ([]Operat
 }
 
 // GetBalanceByCurrency returns balance of specified currency
-func (p *Portfolio) GetBalanceByCurrency(curr Currency) (float64, error) {
+func (p *Portfolio) GetBalanceByCurrency(curr Currency) (int64, error) {
 	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
 	if err != nil {
 		return 0, err
@@ -352,7 +353,7 @@ func (p *Portfolio) GetBalanceByCurrency(curr Currency) (float64, error) {
 }
 
 // GetBalanceByCurrencyTillDate returns balance of specified currency till specified date
-func (p *Portfolio) GetBalanceByCurrencyTillDate(curr Currency, dt time.Time) (float64, error) {
+func (p *Portfolio) GetBalanceByCurrencyTillDate(curr Currency, dt time.Time) (int64, error) {
 	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
 	if err != nil {
 		return 0, err
@@ -370,7 +371,7 @@ func (p *Portfolio) GetBalanceByCurrencyTillDate(curr Currency, dt time.Time) (f
 }
 
 // GetBalanceByFigi returns balance of specified figi
-func (p *Portfolio) GetBalanceByFigi(figi string) (float64, error) {
+func (p *Portfolio) GetBalanceByFigi(figi string) (int64, error) {
 	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
 	if err != nil {
 		return 0, err
@@ -388,7 +389,7 @@ func (p *Portfolio) GetBalanceByFigi(figi string) (float64, error) {
 }
 
 // GetBalanceByFigiTillDate returns balance of specified figi till specified date
-func (p *Portfolio) GetBalanceByFigiTillDate(figi string, dt time.Time) (float64, error) {
+func (p *Portfolio) GetBalanceByFigiTillDate(figi string, dt time.Time) (int64, error) {
 	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
 	if err != nil {
 		return 0, err
@@ -407,7 +408,7 @@ func (p *Portfolio) GetBalanceByFigiTillDate(figi string, dt time.Time) (float64
 }
 
 // GetAveragePriceByFigi returns average price of specified figi (FIFO)
-func (p *Portfolio) GetAveragePriceByFigi(figi string) (float64, error) {
+func (p *Portfolio) GetAveragePriceByFigi(figi string) (int64, error) {
 	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
 	if err != nil {
 		return 0, err
@@ -425,7 +426,7 @@ func (p *Portfolio) GetAveragePriceByFigi(figi string) (float64, error) {
 }
 
 // GetAveragePriceByFigiTillDate returns average price of specified figi (FIFO) on specified date
-func (p *Portfolio) GetAveragePriceByFigiTillDate(figi string, dt time.Time) (float64, error) {
+func (p *Portfolio) GetAveragePriceByFigiTillDate(figi string, dt time.Time) (int64, error) {
 	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
 	if err != nil {
 		return 0, err
@@ -443,10 +444,10 @@ func (p *Portfolio) GetAveragePriceByFigiTillDate(figi string, dt time.Time) (fl
 	return getAverage(op), nil
 }
 
-func getSum(operations []Operation) float64 {
-	sum := float64(0)
+func getSum(operations []Operation) int64 {
+	sum := int64(0)
 	for _, opertion := range operations {
-		amount := opertion.Price * float64(opertion.Volume)
+		amount := opertion.Price * opertion.Volume
 		switch opertion.OperationType {
 		case PayIn, Sell:
 			sum += amount
@@ -475,7 +476,7 @@ func getOperations(filter primitive.M, findOptions *options.FindOptions) ([]Oper
 	return results, err
 }
 
-func getAverage(ops []Operation) float64 {
+func getAverage(ops []Operation) int64 {
 	d := lane.NewDeque()
 	for _, op := range ops {
 		if op.OperationType == Buy {
@@ -497,18 +498,17 @@ func getAverage(ops []Operation) float64 {
 		}
 	}
 
-	cost, vol := 0.0, 0.0
+	cost, vol := int64(0), int64(0)
 	for {
 		if d.Empty() {
 			break
 		}
 		op := d.Pop().(Operation)
-		v := float64(op.Volume)
-		cost += op.Price * v
-		vol += v
+		cost += op.Price * op.Volume
+		vol += op.Volume
 	}
 
-	result := 0.0
+	result := int64(0)
 	if vol != 0 {
 		result = cost / vol
 	}

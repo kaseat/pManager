@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 	"net/http"
 	"time"
 
@@ -25,9 +24,13 @@ func GetAveragePrice(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, fmt.Sprint("No portfolio found with Id: ", id))
 		return
 	}
-	figi := mux.Vars(r)["figi"]
+	figi := r.FormValue("figi")
+	if figi == "" {
+		writeError(w, http.StatusBadRequest, fmt.Sprint(`You must provide "figi" parameter`))
+		return
+	}
 
-	var price float64
+	var price int64
 	onDate, err := time.Parse("2006-01-02T15:04:05.000Z0700", r.FormValue("onDate"))
 	if err == nil {
 		price, err = p.GetAveragePriceByFigiTillDate(figi, onDate)
@@ -39,16 +42,66 @@ func GetAveragePrice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println(onDate)
-	price = math.Round(price*100) / 100
 	resp := struct {
 		Status responseStatus
 		Price  float64
 	}{
 		Status: ok,
-		Price:  price,
+		Price:  float64(price) / 1e6,
 	}
 
-	bytes, _ := json.Marshal(&resp)
+	bytes, err := json.Marshal(&resp)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(bytes)
+}
+
+// GetBalance returns balance of specified currency
+func GetBalance(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	id := mux.Vars(r)["id"]
+	found, p, err := portfolio.GetPortfolio(id)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, fmt.Sprint("No portfolio found with Id: ", id))
+		return
+	}
+	curr := portfolio.Currency(r.FormValue("currency"))
+	if curr == "" {
+		writeError(w, http.StatusBadRequest, fmt.Sprint("You must provide 'currency' parameter"))
+		return
+	}
+	if !(curr == portfolio.EUR || curr == portfolio.RUB || curr == portfolio.USD) {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("Unknown currency '%s'. Expected '%s', '%s' or '%s'",
+			curr, portfolio.EUR, portfolio.RUB, portfolio.USD))
+		return
+	}
+	balance, err := p.GetBalanceByCurrency(curr)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp := struct {
+		Status  responseStatus
+		Balance float64
+	}{
+		Status:  ok,
+		Balance: float64(balance) / 1e6,
+	}
+
+	bytes, err := json.Marshal(&resp)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(bytes)

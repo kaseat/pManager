@@ -69,6 +69,7 @@ func ReadOperations(w http.ResponseWriter, r *http.Request) {
 
 	for i := range ops {
 		ops[i].PortfolioID = ""
+		ops[i].PriceF = float64(ops[i].Price) / 1e6
 	}
 
 	resp := operationsResponse{Status: ok, PortfolioID: p.PortfolioID, Operations: ops}
