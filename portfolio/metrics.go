@@ -1,6 +1,7 @@
 package portfolio
 
 import (
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -8,77 +9,49 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// GetBalanceByCurrency returns balance of specified currency
-func (p *Portfolio) GetBalanceByCurrency(curr Currency) (int64, error) {
+// GetBalance returns blance for specified params
+func (p *Portfolio) GetBalance(curr Currency, figi string, on string) (int64, error) {
 	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
 	if err != nil {
 		return 0, err
 	}
-	filter := bson.M{"$and": []interface{}{
-		bson.M{"portfolio": pid},
-		bson.M{"currency": curr},
-	}}
-	findOptions := options.Find()
-	op, err := getOperations(filter, findOptions)
-	if err != nil {
-		return 0, err
-	}
-	return getSum(op), nil
-}
 
-// GetBalanceByCurrencyTillDate returns balance of specified currency till specified date
-func (p *Portfolio) GetBalanceByCurrencyTillDate(curr Currency, dt time.Time) (int64, error) {
-	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
-	if err != nil {
+	filter := bson.M{"portfolio": pid}
+	and := []interface{}{}
+	hasParams := false
+	if curr != "" {
+		and = append(and, bson.M{"currency": curr})
+		hasParams = true
+	}
+	if figi != "" {
+		and = append(and, bson.M{"figi": figi})
+		hasParams = true
+	}
+
+	if curr != "" && figi != "" {
+		err = errors.New("You must provide either 'currency' or 'figi'")
 		return 0, err
 	}
-	filter := bson.M{"$and": []interface{}{
-		bson.M{"portfolio": pid},
-		bson.M{"currency": curr},
-		bson.M{"datetime": bson.M{"$lte": dt}},
-	}}
+
+	if dtime, err := time.Parse("2006-01-02T15:04:05.000Z0700", on); err == nil {
+		and = append(and, bson.M{"datetime": bson.M{"$lte": dtime}})
+		hasParams = true
+	}
+
+	if hasParams {
+		and = append(and, filter)
+		filter = bson.M{"$and": and}
+	}
+
 	op, err := getOperations(filter, options.Find())
 	if err != nil {
 		return 0, err
 	}
-	return getSum(op), nil
-}
-
-// GetBalanceByFigi returns balance of specified figi
-func (p *Portfolio) GetBalanceByFigi(figi string) (int64, error) {
-	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
-	if err != nil {
-		return 0, err
+	sum := getSum(op)
+	if figi != "" {
+		sum = -sum
 	}
-	filter := bson.M{"$and": []interface{}{
-		bson.M{"portfolio": pid},
-		bson.M{"figi": figi},
-	}}
-	findOptions := options.Find()
-	op, err := getOperations(filter, findOptions)
-	if err != nil {
-		return 0, err
-	}
-	return -getSum(op), nil
-}
-
-// GetBalanceByFigiTillDate returns balance of specified figi till specified date
-func (p *Portfolio) GetBalanceByFigiTillDate(figi string, dt time.Time) (int64, error) {
-	pid, err := primitive.ObjectIDFromHex(p.PortfolioID)
-	if err != nil {
-		return 0, err
-	}
-	filter := bson.M{"$and": []interface{}{
-		bson.M{"portfolio": pid},
-		bson.M{"figi": bson.M{"$eq": figi}},
-		bson.M{"datetime": bson.M{"$lte": dt}},
-	}}
-	findOptions := options.Find()
-	op, err := getOperations(filter, findOptions)
-	if err != nil {
-		return 0, err
-	}
-	return -getSum(op), nil
+	return sum, nil
 }
 
 // GetAveragePriceByFigi returns average price of specified figi (FIFO)

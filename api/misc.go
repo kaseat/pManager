@@ -84,7 +84,8 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 			curr, portfolio.EUR, portfolio.RUB, portfolio.USD))
 		return
 	}
-	balance, err := p.GetBalanceByCurrency(curr)
+
+	balance, err := p.GetBalance(curr, "", r.FormValue("on"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return

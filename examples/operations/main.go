@@ -61,7 +61,7 @@ func manageOperations() {
 		DateTime:      time.Now(),
 		OperationType: portfolio.PayIn}
 
-	if bal, err := p.GetBalanceByCurrency(portfolio.RUB); err != nil {
+	if bal, err := p.GetBalance(portfolio.RUB, "", ""); err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
 	} else if bal == 0 {
@@ -180,7 +180,7 @@ func manageOperations() {
 	}
 
 	// get actual RUB balance
-	bal, err := p.GetBalanceByCurrency(portfolio.RUB)
+	bal, err := p.GetBalance(portfolio.RUB, "", "")
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
@@ -188,8 +188,8 @@ func manageOperations() {
 	fmt.Println("Current ballance is", bal, portfolio.RUB)
 
 	// get RUB balance on date
-	today := time.Now().UTC().AddDate(0, 0, 1)
-	bal, err = p.GetBalanceByCurrencyTillDate(portfolio.RUB, today)
+	today := time.Now().UTC().AddDate(0, 0, 1).Format("2006-01-02T15:04:05.000Z0700")
+	bal, err = p.GetBalance(portfolio.RUB, "", today)
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
@@ -197,7 +197,7 @@ func manageOperations() {
 	fmt.Println("Ballance on", today, "is", bal, portfolio.RUB)
 
 	// get actual BBG005DXDPK9 balance
-	bal, err = p.GetBalanceByFigi("BBG005DXDPK9")
+	bal, err = p.GetBalance("", "BBG005DXDPK9", "")
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
@@ -213,7 +213,7 @@ func manageOperations() {
 	fmt.Println("Current average price for BBG005DXDPK9 is", bal, portfolio.RUB)
 
 	// get BBG00NRFC2X2 balance on date
-	bal, err = p.GetAveragePriceByFigiTillDate("BBG00NRFC2X2", today)
+	bal, err = p.GetAveragePriceByFigiTillDate("BBG00NRFC2X2", time.Now().UTC().AddDate(0, 0, 1))
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
@@ -221,7 +221,7 @@ func manageOperations() {
 	fmt.Println("Average price for BBG00NRFC2X2 on", today, "is", bal, portfolio.RUB)
 
 	// get BBG005DXDPK9 balance on date
-	bal, err = p.GetBalanceByFigiTillDate("BBG005DXDPK9", today)
+	bal, err = p.GetBalance("", "BBG005DXDPK9", today)
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
