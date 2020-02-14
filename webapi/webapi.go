@@ -31,5 +31,6 @@ func main() {
 	router.HandleFunc("/portfolios/{id}/operations", api.DeleteAllOperations).Methods("DELETE")
 	router.HandleFunc("/portfolios/{id}/average", api.GetAveragePrice).Methods("GET")
 	router.HandleFunc("/portfolios/{id}/balance", api.GetBalance).Methods("GET")
+	router.HandleFunc("/auth/getjwt", api.GetToken).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8081", router))
 }
