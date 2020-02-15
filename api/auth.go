@@ -1,8 +1,7 @@
 package api
 
 import (
-	"errors"
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -12,41 +11,77 @@ import (
 
 var secret = []byte("my_secret_key")
 
+// Claims represents users claims
+type Claims struct {
+	Username string `json:"username"`
+	jwt.StandardClaims
+}
+
 // GetToken returns jwt token
 func GetToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
+	claims := &Claims{
+		Username: "admin",
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
+		},
+	}
 
-	claims["user"] = "admin"
-	claims["exp"] = time.Now().Add(time.Minute).Unix()
-	tokenString, _ := token.SignedString(secret)
-	fmt.Println(tokenString)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(secret)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp := struct {
+		Status responseStatus
+		Token  string
+	}{
+		Status: ok,
+		Token:  tokenString,
+	}
+
+	bytes, err := json.Marshal(&resp)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(tokenString))
+	w.Write(bytes)
 }
 
-// VerifyToken verfies jwt token
-func VerifyToken(r *http.Request) (bool, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return false, errors.New("No Authorization header found")
-	}
+// VerifyTokenMiddleware verifies token, if token ok, allawes request pass-through
+func VerifyTokenMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			writeError(w, http.StatusBadRequest, "No Authorization header found")
+			return
+		}
+		authHeaderParts := strings.Fields(authHeader)
+		if len(authHeaderParts) != 2 || authHeaderParts[0] != "Bearer" {
+			writeError(w, http.StatusBadRequest, "Authorization header format must be Bearer {token}")
+			return
+		}
+		claims := &Claims{}
+		tkn, err := jwt.ParseWithClaims(authHeaderParts[1], claims, func(token *jwt.Token) (interface{}, error) {
+			return secret, nil
+		})
 
-	authHeaderParts := strings.Fields(authHeader)
-	if len(authHeaderParts) != 2 || authHeaderParts[0] != "Bearer" {
-		return false, errors.New("Authorization header format must be Bearer {token}")
-	}
-	claims := &jwt.MapClaims{}
-	tkn, err := jwt.ParseWithClaims(authHeaderParts[1], claims, func(token *jwt.Token) (interface{}, error) {
-		return secret, nil
+		if err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		if !tkn.Valid {
+			writeError(w, http.StatusBadRequest, "Invalid token")
+			return
+		}
+
+		r.Header.Add("user", claims.Username)
+		next.ServeHTTP(w, r)
 	})
-
-	if err != nil {
-		return false, err
-	}
-	fmt.Println(*claims)
-
-	return tkn.Valid, nil
 }
