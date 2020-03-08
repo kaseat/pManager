@@ -11,3 +11,13 @@ func writeError(w http.ResponseWriter, statusCode int, text string) {
 	w.WriteHeader(statusCode)
 	w.Write(bytes)
 }
+
+func writeOk(w http.ResponseWriter, resp interface{}) {
+	bytes, err := json.Marshal(&resp)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(bytes)
+}

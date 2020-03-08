@@ -1,12 +1,12 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/kaseat/pManager/auth"
 )
 
 var secret = []byte("my_secret_key")
@@ -21,36 +21,38 @@ type Claims struct {
 func GetToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	u := user{
+		Username: r.FormValue("username"),
+		Password: r.FormValue("password"),
+	}
+
+	_, err := auth.CheckСredentials(u.Username, u.Password)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	claims := &Claims{
-		Username: "admin",
+		Username: u.Username,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
+			ExpiresAt: time.Now().Add(50 * time.Minute).Unix(),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(secret)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	resp := struct {
-		Status responseStatus
-		Token  string
+	writeOk(w, struct {
+		Status responseStatus `json:"status"`
+		Token  string         `json:"token"`
 	}{
 		Status: ok,
 		Token:  tokenString,
-	}
-
-	bytes, err := json.Marshal(&resp)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	})
 }
 
 // VerifyTokenMiddleware verifies token, if token ok, allawes request pass-through

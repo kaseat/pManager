@@ -20,7 +20,7 @@ func main() {
 	fmt.Println("Started!")
 
 	router := mux.NewRouter()
-	portfolios := router.PathPrefix("/portfolios").Subrouter().StrictSlash(true)
+	portfolios := router.PathPrefix("/api/portfolios").Subrouter().StrictSlash(true)
 	portfolios.Use(api.VerifyTokenMiddleware)
 	portfolios.HandleFunc("/", api.CreateSinglePortfolio).Methods("POST")
 	portfolios.HandleFunc("/", api.ReadAllPortfolios).Methods("GET")
@@ -33,6 +33,6 @@ func main() {
 	portfolios.HandleFunc("/{id}/operations", api.DeleteAllOperations).Methods("DELETE")
 	portfolios.HandleFunc("/{id}/average", api.GetAveragePrice).Methods("GET")
 	portfolios.HandleFunc("/{id}/balance", api.GetBalance).Methods("GET")
-	router.HandleFunc("/auth/getjwt", api.GetToken).Methods("GET")
+	router.HandleFunc("/api/auth/getjwt", api.GetToken).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8081", router))
 }

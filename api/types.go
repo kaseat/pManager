@@ -56,3 +56,8 @@ type operationDeleteResponse struct {
 	Status     responseStatus `json:"status"`
 	NumDeleted int64          `json:"numDeleted"`
 }
+
+type user struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
