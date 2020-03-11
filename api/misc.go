@@ -15,7 +15,19 @@ func GetAveragePrice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id := mux.Vars(r)["id"]
-	found, p, err := portfolio.GetPortfolio(id)
+	user := r.Header.Get("user")
+
+	found, o, err := portfolio.GetOwnerByLogin(user)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
+		return
+	}
+
+	found, p, err := o.GetPortfolio(id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -65,7 +77,19 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id := mux.Vars(r)["id"]
-	found, p, err := portfolio.GetPortfolio(id)
+	user := r.Header.Get("user")
+
+	found, o, err := portfolio.GetOwnerByLogin(user)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
+		return
+	}
+
+	found, p, err := o.GetPortfolio(id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return

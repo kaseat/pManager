@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/kaseat/pManager/portfolio"
 )
 
@@ -15,8 +16,9 @@ func main() {
 }
 
 func managePortfolio() {
+	o, err := portfolio.AddOwner("admin", "", "")
 	// create portfolio
-	p, err := portfolio.AddPortfolio("Awesome portfolio", "Portfolio for my awesome investments")
+	p, err := o.AddPortfolio("Awesome portfolio", "Portfolio for my awesome investments")
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
@@ -39,7 +41,7 @@ func managePortfolio() {
 
 	// get all portfolios
 	var ps []portfolio.Portfolio
-	ps, err = portfolio.GetAllPortfolios()
+	ps, err = o.GetAllPortfolios()
 
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
@@ -51,14 +53,14 @@ func managePortfolio() {
 	}
 
 	// delete all portfolios
-	_, err = portfolio.DeletePortfolio(ps[0].PortfolioID)
+	_, err = o.DeletePortfolio(ps[0].PortfolioID)
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return
 	}
 
 	// delete all portfolios
-	_, err = portfolio.DeleteAllPortfolios()
+	_, err = o.DeleteAllPortfolios()
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
 		return

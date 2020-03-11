@@ -34,5 +34,6 @@ func main() {
 	portfolios.HandleFunc("/{id}/average", api.GetAveragePrice).Methods("GET")
 	portfolios.HandleFunc("/{id}/balance", api.GetBalance).Methods("GET")
 	router.HandleFunc("/api/auth/getjwt", api.GetToken).Methods("POST")
+	router.HandleFunc("/api/auth/signup", api.CreateOwner).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8081", router))
 }

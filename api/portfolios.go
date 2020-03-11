@@ -19,7 +19,17 @@ func CreateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	user := r.Header.Get("user")
 
+	found, o, err := portfolio.GetOwnerByLogin(user)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
+		return
+	}
 	var p portfolio.Portfolio
 	err = json.Unmarshal(body, &p)
 	if err != nil {
@@ -32,7 +42,7 @@ func CreateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err = portfolio.AddPortfolio(p.Name, p.Description)
+	p, err = o.AddPortfolio(p.Name, p.Description)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -50,7 +60,19 @@ func ReadSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	id := mux.Vars(r)["id"]
-	found, p, err := portfolio.GetPortfolio(id)
+	user := r.Header.Get("user")
+
+	found, o, err := portfolio.GetOwnerByLogin(user)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
+		return
+	}
+
+	found, p, err := o.GetPortfolio(id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -71,7 +93,19 @@ func ReadSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 func ReadAllPortfolios(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	ps, err := portfolio.GetAllPortfolios()
+	user := r.Header.Get("user")
+
+	found, o, err := portfolio.GetOwnerByLogin(user)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
+		return
+	}
+
+	ps, err := o.GetAllPortfolios()
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -125,7 +159,19 @@ func UptateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 func DeleteSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	id := mux.Vars(r)["id"]
-	hasDeleted, err := portfolio.DeletePortfolio(id)
+	user := r.Header.Get("user")
+
+	found, o, err := portfolio.GetOwnerByLogin(user)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
+		return
+	}
+
+	hasDeleted, err := o.DeletePortfolio(id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -147,7 +193,19 @@ func DeleteSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 func DeleteAllPortfolios(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	hasDeleted, err := portfolio.DeleteAllPortfolios()
+	user := r.Header.Get("user")
+
+	found, o, err := portfolio.GetOwnerByLogin(user)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
+		return
+	}
+
+	hasDeleted, err := o.DeleteAllPortfolios()
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return

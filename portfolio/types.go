@@ -26,9 +26,18 @@ type Operation struct {
 	OperationType Type      `json:"operationType"`
 }
 
+// Owner represets owner of a portfolio
+type Owner struct {
+	OwnerID   string `json:"id" bson:"_id,omitempty"`
+	Login     string `json:"login"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+}
+
 // Portfolio represets a range of investments
 type Portfolio struct {
 	PortfolioID string `json:"id" bson:"_id,omitempty"`
+	OwnerID     string `json:"ownerId" bson:"oid"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
@@ -45,6 +54,7 @@ type database struct {
 	operations *mongo.Collection
 	prices     *mongo.Collection
 	portfolios *mongo.Collection
+	owners     *mongo.Collection
 	context    dbContext
 }
 

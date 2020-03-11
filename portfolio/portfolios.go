@@ -28,13 +28,15 @@ func Init(config Config) error {
 	}
 	db.operations = client.Database(cfg.DbName).Collection("Operations")
 	db.portfolios = client.Database(cfg.DbName).Collection("Portfolios")
+	db.owners = client.Database(cfg.DbName).Collection("Owners")
 	db.prices = client.Database(cfg.DbName).Collection("Prices")
 	return nil
 }
 
 // AddPortfolio adds new potrfolio
-func AddPortfolio(name string, description string) (Portfolio, error) {
+func (o *Owner) AddPortfolio(name, description string) (Portfolio, error) {
 	portfolio := Portfolio{
+		OwnerID:     o.OwnerID,
 		Name:        name,
 		Description: description}
 
@@ -52,7 +54,7 @@ func AddPortfolio(name string, description string) (Portfolio, error) {
 }
 
 // GetPortfolio gets operation by id
-func GetPortfolio(portfolioID string) (bool, Portfolio, error) {
+func (o *Owner) GetPortfolio(portfolioID string) (bool, Portfolio, error) {
 	var result Portfolio
 
 	objID, err := primitive.ObjectIDFromHex(portfolioID)
@@ -61,7 +63,7 @@ func GetPortfolio(portfolioID string) (bool, Portfolio, error) {
 		return false, result, err
 	}
 
-	filter := bson.M{"_id": objID}
+	filter := bson.M{"$and": []interface{}{bson.M{"_id": objID}, bson.M{"oid": o.OwnerID}}}
 	findOptions := options.Find()
 	ctx := db.context()
 
@@ -92,7 +94,7 @@ func (p *Portfolio) UpdatePortfolio() (bool, error) {
 		return false, err
 	}
 
-	filter := bson.M{"_id": objID}
+	filter := bson.M{"$and": []interface{}{bson.M{"_id": objID}, bson.M{"oid": p.OwnerID}}}
 	update := bson.M{
 		"$set": bson.M{
 			"name":        p.Name,
@@ -110,8 +112,8 @@ func (p *Portfolio) UpdatePortfolio() (bool, error) {
 }
 
 // GetAllPortfolios finds all available portfolios at the moment
-func GetAllPortfolios() ([]Portfolio, error) {
-	filter := bson.M{}
+func (o *Owner) GetAllPortfolios() ([]Portfolio, error) {
+	filter := bson.M{"oid": o.OwnerID}
 	findOptions := options.Find()
 
 	ctx := db.context()
@@ -133,9 +135,9 @@ func GetAllPortfolios() ([]Portfolio, error) {
 }
 
 // DeleteAllPortfolios removes all portfolios
-func DeleteAllPortfolios() (bool, error) {
+func (o *Owner) DeleteAllPortfolios() (bool, error) {
 	ctx := db.context()
-	filter := bson.M{}
+	filter := bson.M{"oid": o.OwnerID}
 
 	res, err := db.portfolios.DeleteMany(ctx, filter)
 	if err != nil {
@@ -150,7 +152,7 @@ func DeleteAllPortfolios() (bool, error) {
 }
 
 // DeletePortfolio removes portfolio by Id
-func DeletePortfolio(portfolioID string) (bool, error) {
+func (o *Owner) DeletePortfolio(portfolioID string) (bool, error) {
 	ctx := db.context()
 
 	objID, err := primitive.ObjectIDFromHex(portfolioID)
@@ -159,7 +161,7 @@ func DeletePortfolio(portfolioID string) (bool, error) {
 		return false, err
 	}
 
-	filter := bson.M{"_id": objID}
+	filter := bson.M{"$and": []interface{}{bson.M{"_id": objID}, bson.M{"oid": o.OwnerID}}}
 	res, err := db.portfolios.DeleteOne(ctx, filter)
 	if err != nil {
 		return false, err

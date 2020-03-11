@@ -18,9 +18,26 @@ func main() {
 
 func manageOperations() {
 	var p portfolio.Portfolio
+	var o portfolio.Owner
+
+	// create owner if doesn't exists
+	if ok, ow, err := portfolio.GetOwnerByLogin("admin"); ok == false {
+		if err != nil {
+			fmt.Println("Something went wrong:", err)
+			return
+		}
+		ow, err := portfolio.AddOwner("admin", "", "")
+		if err != nil {
+			fmt.Println("Something went wrong:", err)
+			return
+		}
+		o = ow
+	} else {
+		o = ow
+	}
 
 	// create portfolio if doesn't exists
-	ps, err := portfolio.GetAllPortfolios()
+	ps, err := o.GetAllPortfolios()
 
 	if err != nil {
 		fmt.Println("Something went wrong:", err)
@@ -36,14 +53,14 @@ func manageOperations() {
 			}
 			fmt.Println("Successfully removed", n, "operations from", p.Name)
 		}
-		_, err = portfolio.DeleteAllPortfolios()
+		_, err = o.DeleteAllPortfolios()
 		if err != nil {
 			fmt.Println("Something went wrong:", err)
 			return
 		}
 		fmt.Println("Successfully removed all portfolios")
 
-		p, err = portfolio.AddPortfolio("Awesome portfolio", "My awesome portfolio")
+		p, err = o.AddPortfolio("Awesome portfolio", "My awesome portfolio")
 		if err != nil {
 			fmt.Println("Something went wrong:", err)
 			return
