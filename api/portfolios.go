@@ -48,11 +48,10 @@ func CreateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := singlePortfolioIDResponse{Status: ok, PortfolioID: p.PortfolioID}
-	bytes, _ := json.Marshal(&resp)
-
-	w.WriteHeader(http.StatusCreated)
-	w.Write(bytes)
+	writeOk(w, struct {
+		Status      responseStatus `json:"status"`
+		PortfolioID string         `json:"createdPortfolioId"`
+	}{Status: ok, PortfolioID: p.PortfolioID})
 }
 
 // ReadSinglePortfolio gets single portfolio by id
@@ -82,11 +81,10 @@ func ReadSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := singlePortfolioResponse{Status: ok, Portfolio: p}
-	bytes, _ := json.Marshal(&resp)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	writeOk(w, struct {
+		Status    responseStatus      `json:"status"`
+		Portfolio portfolio.Portfolio `json:"portfolio"`
+	}{Status: ok, Portfolio: p})
 }
 
 // ReadAllPortfolios gets all portfolios
@@ -116,11 +114,10 @@ func ReadAllPortfolios(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := multiplePortfoliosResponse{Status: ok, Portfolios: ps}
-	bytes, _ := json.Marshal(&resp)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	writeOk(w, struct {
+		Status     responseStatus        `json:"status"`
+		Portfolios []portfolio.Portfolio `json:"portfolios"`
+	}{Status: ok, Portfolios: ps})
 }
 
 // UptateSinglePortfolio updates single portfolio by id
@@ -148,11 +145,10 @@ func UptateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := singlePortfolioUpdateResponse{Status: ok, HasUptated: hasUptated}
-	bytes, _ := json.Marshal(&resp)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	writeOk(w, struct {
+		Status     responseStatus `json:"status"`
+		HasUptated bool           `json:"hasModified"`
+	}{Status: ok, HasUptated: hasUptated})
 }
 
 // DeleteSinglePortfolio deletes single portfolio by id
@@ -182,11 +178,10 @@ func DeleteSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := portfolioDeleteResponse{Status: ok, HasDeleted: true}
-	bytes, _ := json.Marshal(&resp)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	writeOk(w, struct {
+		Status     responseStatus `json:"status"`
+		HasDeleted bool           `json:"hasDeleted"`
+	}{Status: ok, HasDeleted: true})
 }
 
 // DeleteAllPortfolios deletes all portfolios
@@ -216,9 +211,8 @@ func DeleteAllPortfolios(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := portfolioDeleteResponse{Status: ok, HasDeleted: true}
-	bytes, _ := json.Marshal(&resp)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	writeOk(w, struct {
+		Status     responseStatus `json:"status"`
+		HasDeleted bool           `json:"hasDeleted"`
+	}{Status: ok, HasDeleted: true})
 }

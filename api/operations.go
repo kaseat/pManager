@@ -51,11 +51,10 @@ func CreateSingleOperation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := singleOperationIDResponse{Status: ok, OperationID: opID}
-	bytes, _ := json.Marshal(&resp)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	writeOk(w, struct {
+		Status      responseStatus `json:"status"`
+		OperationID string         `json:"createdOperationId"`
+	}{Status: ok, OperationID: opID})
 }
 
 // ReadOperations gets all operations of specified portfolio
@@ -96,11 +95,11 @@ func ReadOperations(w http.ResponseWriter, r *http.Request) {
 		ops[i].PriceF = float64(ops[i].Price) / 1e6
 	}
 
-	resp := operationsResponse{Status: ok, PortfolioID: p.PortfolioID, Operations: ops}
-	bytes, _ := json.Marshal(&resp)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	writeOk(w, struct {
+		Status      responseStatus        `json:"status"`
+		PortfolioID string                `json:"portfolioId"`
+		Operations  []portfolio.Operation `json:"operations"`
+	}{Status: ok, PortfolioID: p.PortfolioID, Operations: ops})
 }
 
 // DeleteAllOperations removes all operations of specified portfolio
@@ -136,9 +135,8 @@ func DeleteAllOperations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := operationDeleteResponse{Status: ok, NumDeleted: numDeleted}
-	bytes, _ := json.Marshal(&resp)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	writeOk(w, struct {
+		Status     responseStatus `json:"status"`
+		NumDeleted int64          `json:"numDeleted"`
+	}{Status: ok, NumDeleted: numDeleted})
 }

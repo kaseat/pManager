@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -53,23 +52,14 @@ func GetAveragePrice(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	fmt.Println(onDate)
-	resp := struct {
+
+	writeOk(w, struct {
 		Status responseStatus
 		Price  float64
 	}{
 		Status: ok,
 		Price:  float64(price) / 1e6,
-	}
-
-	bytes, err := json.Marshal(&resp)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	})
 }
 
 // GetBalance returns balance of specified currency
@@ -114,20 +104,12 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	resp := struct {
+
+	writeOk(w, struct {
 		Status  responseStatus
 		Balance float64
 	}{
 		Status:  ok,
 		Balance: float64(balance) / 1e6,
-	}
-
-	bytes, err := json.Marshal(&resp)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	})
 }

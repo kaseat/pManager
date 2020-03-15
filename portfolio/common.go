@@ -1,10 +1,35 @@
 package portfolio
 
 import (
+	"context"
+
 	"github.com/oleiade/lane"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+var db database
+
+// Init portgolio module
+func Init(config Config) error {
+	cfg := config
+	db.context = func() context.Context { return context.Background() }
+	clientOptions := options.Client().ApplyURI(cfg.MongoURL)
+	client, err := mongo.NewClient(clientOptions)
+	if err != nil {
+		return err
+	}
+	err = client.Connect(db.context())
+	if err != nil {
+		return err
+	}
+	db.operations = client.Database(cfg.DbName).Collection("Operations")
+	db.portfolios = client.Database(cfg.DbName).Collection("Portfolios")
+	db.owners = client.Database(cfg.DbName).Collection("Owners")
+	db.prices = client.Database(cfg.DbName).Collection("Prices")
+	return nil
+}
 
 func getSum(operations []Operation) int64 {
 	sum := int64(0)
