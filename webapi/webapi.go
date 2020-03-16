@@ -20,6 +20,9 @@ func main() {
 	fmt.Println("Started!")
 
 	router := mux.NewRouter()
+	tokens := router.PathPrefix("/api/token").Subrouter().StrictSlash(true)
+	tokens.Use(api.VerifyTokenMiddleware)
+	tokens.HandleFunc("/validate", api.ValidateToken).Methods("GET")
 	portfolios := router.PathPrefix("/api/portfolios").Subrouter().StrictSlash(true)
 	portfolios.Use(api.VerifyTokenMiddleware)
 	portfolios.HandleFunc("/", api.CreateSinglePortfolio).Methods("POST")

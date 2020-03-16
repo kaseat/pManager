@@ -61,12 +61,12 @@ func VerifyTokenMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			writeError(w, http.StatusBadRequest, "No Authorization header found")
+			writeError(w, http.StatusUnauthorized, "No Authorization header found")
 			return
 		}
 		authHeaderParts := strings.Fields(authHeader)
 		if len(authHeaderParts) != 2 || authHeaderParts[0] != "Bearer" {
-			writeError(w, http.StatusBadRequest, "Authorization header format must be Bearer {token}")
+			writeError(w, http.StatusUnauthorized, "Authorization header format must be Bearer {token}")
 			return
 		}
 		claims := &Claims{}
@@ -75,15 +75,22 @@ func VerifyTokenMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
-			writeError(w, http.StatusBadRequest, err.Error())
+			writeError(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		if !tkn.Valid {
-			writeError(w, http.StatusBadRequest, "Invalid token")
+			writeError(w, http.StatusUnauthorized, "Invalid token")
 			return
 		}
 
 		r.Header.Add("user", claims.Username)
 		next.ServeHTTP(w, r)
 	})
+}
+
+// ValidateToken checks if token is valid
+func ValidateToken(w http.ResponseWriter, r *http.Request) {
+	writeOk(w, struct {
+		Status responseStatus `json:"status"`
+	}{Status: ok})
 }
