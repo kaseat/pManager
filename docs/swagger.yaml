@@ -1,0 +1,300 @@
+basePath: /api
+definitions:
+  api.addPortfoliioSuccess:
+    properties:
+      createdPortfolioId:
+        example: 5edb2a0e550dfc5f16392838
+        type: string
+    type: object
+  api.delPortfoliioSuccess:
+    properties:
+      hasDeleted:
+        example: true
+        type: boolean
+    type: object
+  api.errorResponse:
+    properties:
+      error:
+        example: Something went wrong
+        type: string
+    type: object
+  api.portfolioRequest:
+    properties:
+      description:
+        example: Best portfolio ever!!!
+        type: string
+      name:
+        example: Best portfolio
+        type: string
+    type: object
+  api.putPortfoliioSuccess:
+    properties:
+      hasModified:
+        example: true
+        type: boolean
+    type: object
+  api.tokenResponse:
+    properties:
+      status:
+        type: string
+      token:
+        type: string
+    type: object
+  portfolio.Portfolio:
+    properties:
+      description:
+        example: Best portfolio ever!!!
+        type: string
+      id:
+        example: 5edb2a0e550dfc5f16392838
+        type: string
+      name:
+        example: Best portfolio
+        type: string
+      ownerId:
+        example: 5e691429a9bfccacfed4ae2a
+        type: string
+    type: object
+host: localhost
+info:
+  contact: {}
+  license:
+    name: MIT
+    url: https://github.com/kaseat/pManager/blob/master/LICENSE
+  title: Portfolio manager API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: get string by ID
+      operationId: get-string-by-int
+      parameters:
+      - description: User name
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.tokenResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: Show a account
+      tags:
+      - security
+  /portfolios:
+    delete:
+      description: Deletes all portfolios an all associated operations
+      operationId: portfolio-del-all
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns true if portfolios has deleted
+          schema:
+            $ref: '#/definitions/api.delPortfoliioSuccess'
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete all portfolios
+      tags:
+      - portfolios
+    get:
+      description: Gets all portfolios avaliable
+      operationId: portfolio-get-all
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns portfolio info
+          schema:
+            items:
+              $ref: '#/definitions/portfolio.Portfolio'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all portfolios
+      tags:
+      - portfolios
+    post:
+      consumes:
+      - application/json
+      description: Creates single portfolio
+      operationId: portfolio-add
+      parameters:
+      - description: Portfolio info
+        in: body
+        name: portfolio
+        required: true
+        schema:
+          $ref: '#/definitions/api.portfolioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns portfolio Id just created
+          schema:
+            $ref: '#/definitions/api.addPortfoliioSuccess'
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Add new portfolio
+      tags:
+      - portfolios
+  /portfolios/{id}:
+    delete:
+      description: Deletes portfolio an all associated operations
+      operationId: portfolio-del-by-id
+      parameters:
+      - description: Portfolio Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns true if portfolio has deleted
+          schema:
+            $ref: '#/definitions/api.delPortfoliioSuccess'
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete portfolio
+      tags:
+      - portfolios
+    get:
+      description: Gets portfolio info by Id
+      operationId: portfolio-get-by-id
+      parameters:
+      - description: Portfolio Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns portfolio info if any
+          schema:
+            $ref: '#/definitions/portfolio.Portfolio'
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get portfolio by Id
+      tags:
+      - portfolios
+    put:
+      consumes:
+      - application/json
+      description: Updates portfolio info by Id
+      operationId: portfolio-put-by-id
+      parameters:
+      - description: Portfolio Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Portfolio info
+        in: body
+        name: portfolio
+        required: true
+        schema:
+          $ref: '#/definitions/api.portfolioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns portfolio info if any
+          schema:
+            $ref: '#/definitions/api.putPortfoliioSuccess'
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update portfolio info
+      tags:
+      - portfolios
+  /token/validate:
+    get:
+      description: get string by ID
+      operationId: validate-token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.tokenResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Validate token
+      tags:
+      - security
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

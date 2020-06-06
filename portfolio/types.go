@@ -36,10 +36,10 @@ type Owner struct {
 
 // Portfolio represets a range of investments
 type Portfolio struct {
-	PortfolioID string `json:"id" bson:"_id,omitempty"`
-	OwnerID     string `json:"ownerId" bson:"oid"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	PortfolioID string `json:"id" bson:"_id,omitempty" example:"5edb2a0e550dfc5f16392838"`
+	OwnerID     string `json:"ownerId" bson:"oid" example:"5e691429a9bfccacfed4ae2a"`
+	Name        string `json:"name" example:"Best portfolio"`
+	Description string `json:"description" example:"Best portfolio ever!!!"`
 }
 
 // Config represents configuration

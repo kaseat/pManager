@@ -11,6 +11,18 @@ import (
 )
 
 // CreateSinglePortfolio creates single portfolio
+// @summary Add new portfolio
+// @description Creates single portfolio
+// @id portfolio-add
+// @accept json
+// @produce json
+// @param portfolio body portfolioRequest true "Portfolio info"
+// @success 200 {object} addPortfoliioSuccess "Returns portfolio Id just created"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags portfolios
+// @security ApiKeyAuth
+// @router /portfolios [post]
 func CreateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -48,13 +60,21 @@ func CreateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOk(w, struct {
-		Status      responseStatus `json:"status"`
-		PortfolioID string         `json:"createdPortfolioId"`
-	}{Status: ok, PortfolioID: p.PortfolioID})
+	writeOk(w, addPortfoliioSuccess{PortfolioID: p.PortfolioID})
 }
 
 // ReadSinglePortfolio gets single portfolio by id
+// @summary Get portfolio by Id
+// @description Gets portfolio info by Id
+// @id portfolio-get-by-id
+// @produce json
+// @param id path string true "Portfolio Id"
+// @success 200 {object} portfolio.Portfolio "Returns portfolio info if any"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags portfolios
+// @security ApiKeyAuth
+// @router /portfolios/{id} [get]
 func ReadSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -81,13 +101,20 @@ func ReadSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOk(w, struct {
-		Status    responseStatus      `json:"status"`
-		Portfolio portfolio.Portfolio `json:"portfolio"`
-	}{Status: ok, Portfolio: p})
+	writeOk(w, p)
 }
 
 // ReadAllPortfolios gets all portfolios
+// @summary Get all portfolios
+// @description Gets all portfolios avaliable
+// @id portfolio-get-all
+// @produce json
+// @success 200 {array} portfolio.Portfolio "Returns portfolio info"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags portfolios
+// @security ApiKeyAuth
+// @router /portfolios [get]
 func ReadAllPortfolios(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -110,17 +137,26 @@ func ReadAllPortfolios(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(ps) == 0 {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No portfolios found"))
-		return
+		ps = []portfolio.Portfolio{}
 	}
 
-	writeOk(w, struct {
-		Status     responseStatus        `json:"status"`
-		Portfolios []portfolio.Portfolio `json:"portfolios"`
-	}{Status: ok, Portfolios: ps})
+	writeOk(w, ps)
 }
 
 // UptateSinglePortfolio updates single portfolio by id
+// @summary Update portfolio info
+// @description Updates portfolio info by Id
+// @id portfolio-put-by-id
+// @accept json
+// @produce json
+// @param id path string true "Portfolio Id"
+// @param portfolio body portfolioRequest true "Portfolio info"
+// @success 200 {object} putPortfoliioSuccess "Returns portfolio info if any"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags portfolios
+// @security ApiKeyAuth
+// @router /portfolios/{id} [put]
 func UptateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -138,20 +174,41 @@ func UptateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := r.Header.Get("user")
+	found, o, err := portfolio.GetOwnerByLogin(user)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
+		return
+	}
+
 	p.PortfolioID = mux.Vars(r)["id"]
+	p.OwnerID = o.OwnerID
+
 	hasUptated, err := p.UpdatePortfolio()
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	writeOk(w, struct {
-		Status     responseStatus `json:"status"`
-		HasUptated bool           `json:"hasModified"`
-	}{Status: ok, HasUptated: hasUptated})
+	writeOk(w, putPortfoliioSuccess{HasModified: hasUptated})
 }
 
 // DeleteSinglePortfolio deletes single portfolio by id
+// @summary Delete portfolio
+// @description Deletes portfolio an all associated operations
+// @id portfolio-del-by-id
+// @produce json
+// @param id path string true "Portfolio Id"
+// @success 200 {object} delPortfoliioSuccess "Returns true if portfolio has deleted"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags portfolios
+// @security ApiKeyAuth
+// @router /portfolios/{id} [delete]
 func DeleteSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	id := mux.Vars(r)["id"]
@@ -173,18 +230,20 @@ func DeleteSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !hasDeleted {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No portfolio found with Id: ", id))
-		return
-	}
-
-	writeOk(w, struct {
-		Status     responseStatus `json:"status"`
-		HasDeleted bool           `json:"hasDeleted"`
-	}{Status: ok, HasDeleted: true})
+	writeOk(w, delPortfoliioSuccess{HasDeleted: hasDeleted})
 }
 
 // DeleteAllPortfolios deletes all portfolios
+// @summary Delete all portfolios
+// @description Deletes all portfolios an all associated operations
+// @id portfolio-del-all
+// @produce json
+// @success 200 {object} delPortfoliioSuccess "Returns true if portfolios has deleted"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags portfolios
+// @security ApiKeyAuth
+// @router /portfolios [delete]
 func DeleteAllPortfolios(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -206,13 +265,5 @@ func DeleteAllPortfolios(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !hasDeleted {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No portfolios to delete"))
-		return
-	}
-
-	writeOk(w, struct {
-		Status     responseStatus `json:"status"`
-		HasDeleted bool           `json:"hasDeleted"`
-	}{Status: ok, HasDeleted: true})
+	writeOk(w, delPortfoliioSuccess{HasDeleted: hasDeleted})
 }

@@ -18,6 +18,17 @@ type Claims struct {
 }
 
 // GetToken returns jwt token
+// @Summary Show a account
+// @Description get string by ID
+// @ID get-string-by-int
+// @Tags security
+// @Accept x-www-form-urlencoded
+// @Produce json
+// @Param username formData string true "User name"
+// @Param password formData string true "Password"
+// @Success 200 {object} tokenResponse
+// @Failure 401 {object} errorResponse
+// @Router /auth/login [post]
 func GetToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -46,10 +57,7 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOk(w, struct {
-		Status responseStatus `json:"status"`
-		Token  string         `json:"token"`
-	}{
+	writeOk(w, tokenResponse{
 		Status: ok,
 		Token:  tokenString,
 	})
@@ -89,6 +97,15 @@ func VerifyTokenMiddleware(next http.Handler) http.Handler {
 }
 
 // ValidateToken checks if token is valid
+// @Summary Validate token
+// @Description get string by ID
+// @ID validate-token
+// @Produce  json
+// @Success 200 {object} tokenResponse
+// @Failure 401 {object} errorResponse
+// @Tags security
+// @Security ApiKeyAuth
+// @Router /token/validate [get]
 func ValidateToken(w http.ResponseWriter, r *http.Request) {
 	writeOk(w, struct {
 		Status responseStatus `json:"status"`
