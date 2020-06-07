@@ -334,6 +334,133 @@
                 }
             }
         },
+        "/portfolios/{id}/operations": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Gets all operations for specified portfolio",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations",
+                    "portfolios"
+                ],
+                "summary": "Get all operations",
+                "operationId": "operation-get-all",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Portfolio Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by FIGI",
+                        "name": "figi",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter operations from this date",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter operations till this date",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns operations info",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/portfolio.Operation"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Returns when any processing error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Returns when authentication error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Adds operation to specified portfolio",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations",
+                    "portfolios"
+                ],
+                "summary": "Add new operation",
+                "operationId": "operation-add",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Portfolio Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Operation info",
+                        "name": "portfolio",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.operationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns portfolio Id just created",
+                        "schema": {
+                            "$ref": "#/definitions/api.addOperationSuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "Returns when any processing error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Returns when authentication error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/token/validate": {
             "get": {
                 "security": [
@@ -368,6 +495,15 @@
         }
     },
     "definitions": {
+        "api.addOperationSuccess": {
+            "type": "object",
+            "properties": {
+                "createdOperationId": {
+                    "type": "string",
+                    "example": "5edbc0a72c857652a0542fab"
+                }
+            }
+        },
         "api.addPortfoliioSuccess": {
             "type": "object",
             "properties": {
@@ -392,6 +528,35 @@
                 "error": {
                     "type": "string",
                     "example": "Something went wrong"
+                }
+            }
+        },
+        "api.operationRequest": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string",
+                    "example": "USD"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2020-06-06T22:54:05.000+07:00"
+                },
+                "figi": {
+                    "type": "string",
+                    "example": "BBG00MVRXDB0"
+                },
+                "operationType": {
+                    "type": "string",
+                    "example": "sell"
+                },
+                "price": {
+                    "type": "number",
+                    "example": 293.61
+                },
+                "vol": {
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },
@@ -425,6 +590,42 @@
                 },
                 "token": {
                     "type": "string"
+                }
+            }
+        },
+        "portfolio.Operation": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string",
+                    "example": "USD"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "2020-06-06T15:54:05Z"
+                },
+                "figi": {
+                    "type": "string",
+                    "example": "BBG00MVRXDB0"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "5edbc0a72c857652a0542fab"
+                },
+                "operationType": {
+                    "type": "string",
+                    "example": "sell"
+                },
+                "pid": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number",
+                    "example": 293.61
+                },
+                "vol": {
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },

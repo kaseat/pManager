@@ -16,14 +16,14 @@ type Type string
 // Operation represents market operation
 type Operation struct {
 	PortfolioID   string    `json:"pid,omitempty" bson:"portfolio"`
-	OperationID   string    `json:"id" bson:"_id,omitempty"`
-	Currency      Currency  `json:"currency"`
+	OperationID   string    `json:"id" bson:"_id,omitempty" example:"5edbc0a72c857652a0542fab"`
+	Currency      Currency  `json:"currency" example:"USD"`
 	Price         int64     `json:"-" bson:"price"`
-	PriceF        float64   `json:"price" bson:"-"`
-	Volume        int64     `json:"vol"`
-	FIGI          string    `json:"figi"`
-	DateTime      time.Time `json:"date"`
-	OperationType Type      `json:"operationType"`
+	PriceF        float64   `json:"price" bson:"-" example:"293.61"`
+	Volume        int64     `json:"vol" example:"100"`
+	FIGI          string    `json:"figi" example:"BBG00MVRXDB0"`
+	DateTime      time.Time `json:"date" example:"2020-06-06T15:54:05Z"`
+	OperationType Type      `json:"operationType" example:"sell"`
 }
 
 // Owner represets owner of a portfolio

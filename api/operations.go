@@ -10,6 +10,19 @@ import (
 )
 
 // CreateSingleOperation creates single operation
+// @summary Add new operation
+// @description Adds operation to specified portfolio
+// @id operation-add
+// @accept json
+// @produce json
+// @param id path string true "Portfolio Id"
+// @param portfolio body operationRequest true "Operation info"
+// @success 200 {object} addOperationSuccess "Returns portfolio Id just created"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags operations,portfolios
+// @security ApiKeyAuth
+// @router /portfolios/{id}/operations [post]
 func CreateSingleOperation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -51,13 +64,24 @@ func CreateSingleOperation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOk(w, struct {
-		Status      responseStatus `json:"status"`
-		OperationID string         `json:"createdOperationId"`
-	}{Status: ok, OperationID: opID})
+	writeOk(w, addOperationSuccess{OperationID: opID})
 }
 
 // ReadOperations gets all operations of specified portfolio
+// @summary Get all operations
+// @description Gets all operations for specified portfolio
+// @id operation-get-all
+// @produce json
+// @param id path string true "Portfolio Id"
+// @param figi query string false "Filter by FIGI"
+// @param from query string false "Filter operations from this date"
+// @param to query string false "Filter operations till this date"
+// @success 200 {array} portfolio.Operation "Returns operations info"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags operations,portfolios
+// @security ApiKeyAuth
+// @router /portfolios/{id}/operations [get]
 func ReadOperations(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -95,11 +119,7 @@ func ReadOperations(w http.ResponseWriter, r *http.Request) {
 		ops[i].PriceF = float64(ops[i].Price) / 1e6
 	}
 
-	writeOk(w, struct {
-		Status      responseStatus        `json:"status"`
-		PortfolioID string                `json:"portfolioId"`
-		Operations  []portfolio.Operation `json:"operations"`
-	}{Status: ok, PortfolioID: p.PortfolioID, Operations: ops})
+	writeOk(w, ops)
 }
 
 // DeleteAllOperations removes all operations of specified portfolio

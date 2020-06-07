@@ -77,12 +77,12 @@ func (p *Portfolio) GetOperations(figi string, from string, to string) ([]Operat
 		hasParams = true
 	}
 
-	if dtime, err := time.Parse("2006-01-02T15:04:05.000Z0700", from); err == nil {
+	if dtime, err := time.Parse("2006-01-02T15:04:05.000Z07:00", from); err == nil {
 		and = append(and, bson.M{"datetime": bson.M{"$gte": dtime}})
 		hasParams = true
 	}
 
-	if dtime, err := time.Parse("2006-01-02T15:04:05.000Z0700", to); err == nil {
+	if dtime, err := time.Parse("2006-01-02T15:04:05.000Z07:00", to); err == nil {
 		and = append(and, bson.M{"datetime": bson.M{"$lte": dtime}})
 		hasParams = true
 	}
