@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/kaseat/pManager/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -11,7 +12,6 @@ import (
 
 // SaveMultipleOperations saves multiple opertions into a storage
 func (db Db) SaveMultipleOperations(portfolioID string, ops []models.Operation) error {
-
 	pid, err := db.findPortfolio(portfolioID)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func (db Db) SaveMultipleOperations(portfolioID string, ops []models.Operation) 
 
 	for i, op := range ops {
 		doc := bson.M{
-			"pid":    op.PortfolioID,
+			"pid":    pid,
 			"curr":   op.Currency,
 			"price":  int64(op.Price * 1e6),
 			"vol":    op.Volume,
@@ -43,14 +43,49 @@ func (db Db) SaveMultipleOperations(portfolioID string, ops []models.Operation) 
 
 	ctx := db.context()
 	opts := options.InsertMany()
-	res, err := db.operations.InsertMany(ctx, docs, opts)
+	_, err = db.operations.InsertMany(ctx, docs, opts)
 	if err != nil {
 		return err
 	}
-	if len(res.InsertedIDs) != len(ops) {
-		return fmt.Errorf("Not all operations has been inserted")
-	}
 	return nil
+}
+
+// GetOperations finds operations depending on input prameters
+func (db Db) GetOperations(portfolioID string, key string, value string, from string, to string) ([]models.Operation, error) {
+	pid, err := db.findPortfolio(portfolioID)
+	if err != nil {
+		return []models.Operation{}, err
+	}
+	if pid.IsZero() {
+		return []models.Operation{}, fmt.Errorf("No portfolio found with %s Id", portfolioID)
+	}
+
+	filter := bson.M{"pid": pid}
+	and := []interface{}{}
+	hasParams := false
+	if key != "" {
+		and = append(and, bson.M{key: value})
+		hasParams = true
+	}
+
+	if dtime, err := time.Parse("2006-01-02T15:04:05Z07:00", from); err == nil {
+		and = append(and, bson.M{"datetime": bson.M{"$gte": dtime}})
+		hasParams = true
+	}
+
+	if dtime, err := time.Parse("2006-01-02T15:04:05Z07:00", to); err == nil {
+		and = append(and, bson.M{"datetime": bson.M{"$lte": dtime}})
+		hasParams = true
+	}
+
+	if hasParams {
+		and = append(and, filter)
+		filter = bson.M{"$and": and}
+	}
+
+	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"datetime": 1})
+	return db.getOperations(filter, findOptions)
 }
 
 // Checks if portfolio with specified _id exists. Then needs to be checked on .IsZero()
@@ -75,4 +110,53 @@ func (db Db) findPortfolio(pid string) (primitive.ObjectID, error) {
 
 	r.Decode(&result)
 	return result.ID, nil
+}
+
+func (db Db) getOperations(filter primitive.M, findOptions *options.FindOptions) ([]models.Operation, error) {
+	ctx := db.context()
+	cur, err := db.operations.Find(ctx, filter, findOptions)
+	defer cur.Close(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var rawOps []struct {
+		PortfolioID   string    `bson:"pid"`
+		OperationID   string    `bson:"_id"`
+		Currency      string    `bson:"curr"`
+		Price         int64     `bson:"price"`
+		Volume        int64     `bson:"vol"`
+		FIGI          string    `bson:"figi"`
+		ISIN          string    `bson:"isin"`
+		Ticker        string    `bson:"ticker"`
+		DateTime      time.Time `bson:"time"`
+		OperationType string    `bson:"type"`
+	}
+	fmt.Println(rawOps)
+
+	cur.All(ctx, &rawOps)
+
+	if rawOps == nil {
+		return []models.Operation{}, nil
+	}
+	results := make([]models.Operation, len(rawOps))
+
+	for i, op := range rawOps {
+		data := models.Operation{
+			PortfolioID:   op.PortfolioID,
+			OperationID:   op.OperationID,
+			Currency:      models.Currency(op.Currency),
+			Price:         float64(op.Price) / 1e6,
+			Volume:        op.Volume,
+			FIGI:          op.FIGI,
+			ISIN:          op.ISIN,
+			Ticker:        op.Ticker,
+			DateTime:      op.DateTime,
+			OperationType: models.Type(op.OperationType),
+		}
+		results[i] = data
+	}
+
+	return results, err
 }
