@@ -24,66 +24,34 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestSaveLastUpdateTime(t *testing.T) {
+func TestLastUpdateTimeStorage(t *testing.T) {
 	provider := "test"
 	now, _ := time.Parse(time.RFC3339, "2020-05-13T22:08:41Z")
 	err := db.SaveLastUpdateTime(provider, now)
 	if err != nil {
-		t.Errorf("Could not save '%s' provider. Internl error: %s", provider, err)
+		t.Errorf("Could not save '%s' provider. Internal error: %s", provider, err)
 	}
+
 	res, err := db.GetLastUpdateTime(provider)
 	if err != nil {
-		t.Errorf("Could not fetch '%s' provider. Internl error: %s", provider, err)
+		t.Errorf("Could not fetch '%s' provider. Internal error: %s", provider, err)
 	}
 	if res != now {
 		t.Errorf("Saved and fetched time not match! Expected %s, got %s", now, res)
 	} else {
 		t.Logf("Success! Expected %s, got %s", now, res)
 	}
-}
 
-func TestFindPortfolio(t *testing.T) {
-
-	_, err := db.findPortfolio("")
-
-	expectedErrMsg := "the provided hex string is not a valid ObjectID"
-	if err == nil {
-		t.Errorf("No error! Expected '%s'", expectedErrMsg)
-	} else {
-
-		if err.Error() != expectedErrMsg {
-			t.Errorf("Expected '%s' got '%s'", expectedErrMsg, err)
-		} else {
-			t.Logf("Success! Expected '%s'", err)
-		}
-	}
-
-	id, err := db.findPortfolio("5edbc0a72c857652a0542fab")
-
+	res, err = db.GetLastUpdateTime("unknown")
 	if err != nil {
-		t.Errorf("Got unexpected error '%s'", err)
-	} else {
-		if id.IsZero() {
-			t.Log("Success! Got zero ObjectID as expected")
-		} else {
-			t.Errorf("Expected zero ObjectID, got '%s'", id.String())
-		}
+		t.Errorf("Could not fetch 'unknown' provider. Internal error: %s", err)
 	}
 
-	pid := addTestPortfolio()
-
-	id, err = db.findPortfolio(pid.Hex())
-	if err != nil {
-		t.Errorf("Got unexpected error '%s'", err)
+	if res.IsZero() {
+		t.Logf("Success! Expected zero time, got %s", res)
 	} else {
-		if id == pid {
-			t.Logf("Success! Expected '%s', got '%s'", pid.String(), id.String())
-		} else {
-			t.Errorf("Found portfolio Id not match! Expected '%s', got '%s'", pid.String(), id.String())
-		}
+		t.Errorf("Error getting unknown provider. Expected zero time, got %s", res)
 	}
-
-	removeTestPortfolio(pid)
 }
 
 func TestSaveMultipleOperations(t *testing.T) {
@@ -139,15 +107,54 @@ func TestGetOperations(t *testing.T) {
 		t.Errorf("Unknown error: '%s'", err)
 	}
 
+	// returns same number of elements as saved
 	res, err := db.GetOperations(pid.Hex(), "", "", "", "")
 	if err != nil {
 		t.Errorf("Unknown error: '%s'", err)
 	}
-
 	if len(res) != len(ops) {
 		t.Errorf("Expected '%d' got '%d'", len(ops), len(res))
 	} else {
 		t.Logf("Success! Expected '%s'", err)
+	}
+
+	// returns same number of elements as saved
+	res, err = db.GetOperations(pid.Hex(), "Ticker", "FXUS", "", "")
+	if err != nil {
+		t.Errorf("Unknown error: '%s'", err)
+	}
+	if len(res) != 1 {
+		t.Errorf("Expected '%d' got '%d'", len(ops), len(res))
+	} else {
+		t.Logf("Success! Expected '%s'", err)
+	}
+
+	// throws error when passing invalid pid
+	_, err = db.GetOperations("", "", "", "", "")
+	expectedErrMsg := "the provided hex string is not a valid ObjectID"
+	if err == nil {
+		t.Errorf("No error! Expected '%s'", expectedErrMsg)
+	} else {
+		if err.Error() != expectedErrMsg {
+			t.Errorf("Expected '%s' got '%s'", expectedErrMsg, err)
+		} else {
+			t.Logf("Success! Expected '%s'", err)
+		}
+	}
+
+	// throws error when provided pid is not found
+	pidTxt := "5edbc0a72c857652a0542fab"
+	_, err = db.GetOperations(pidTxt, "", "", "", "")
+	expectedErrMsg = fmt.Sprintf("No portfolio found with %s Id", pidTxt)
+	if err == nil {
+		t.Errorf("No error! Expected '%s'", expectedErrMsg)
+	} else {
+
+		if err.Error() != expectedErrMsg {
+			t.Errorf("Expected '%s' got '%s'", expectedErrMsg, err)
+		} else {
+			t.Logf("Success! Expected '%s'", err)
+		}
 	}
 
 	removeTestPortfolio(pid)
@@ -193,7 +200,7 @@ func getOperations(pid primitive.ObjectID, now time.Time) []models.Operation {
 		Volume:        1,
 		FIGI:          "BBG0013HGFT4",
 		Ticker:        "RUB",
-		DateTime:      now,
+		DateTime:      now.AddDate(0, 0, 1),
 		OperationType: models.BrokerageFee,
 	}
 	ops = append(ops, op1, op2)
