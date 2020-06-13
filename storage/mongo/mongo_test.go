@@ -94,7 +94,31 @@ func TestSaveMultipleOperations(t *testing.T) {
 	}
 
 	removeTestPortfolio(pid)
-	db.operations.DeleteMany(db.context(), bson.M{"pid": pid}, options.Delete())
+	removeTestOperations(pid)
+}
+
+func TestSaveSingleOperation(t *testing.T) {
+	pid := addTestPortfolio()
+	now, _ := time.Parse(time.RFC3339, "2020-05-13T22:08:41Z")
+	ops := getOperations(pid, now)
+
+	err := db.SaveSingleOperation(pid.Hex(), ops[0])
+	if err != nil {
+		t.Errorf("Fail! Unknown error: '%s'", err)
+	}
+
+	res, err := db.GetOperations(pid.Hex(), "", "", "", "")
+	if err != nil {
+		t.Errorf("Fail! Unknown error: '%s'", err)
+	}
+	if ops[0].PortfolioID != res[0].PortfolioID {
+		t.Errorf("Fail! Expected '%v' got '%v'", ops[0].PortfolioID, res[0].PortfolioID)
+	} else {
+		t.Logf("Success! Expected '%v' got '%v'", ops[0].PortfolioID, res[0].PortfolioID)
+	}
+
+	removeTestPortfolio(pid)
+	removeTestOperations(pid)
 }
 
 func TestGetOperations(t *testing.T) {
@@ -104,27 +128,84 @@ func TestGetOperations(t *testing.T) {
 
 	err := db.SaveMultipleOperations(pid.Hex(), ops)
 	if err != nil {
-		t.Errorf("Unknown error: '%s'", err)
+		t.Errorf("Fail! Unknown error: '%s'", err)
 	}
 
 	// returns same number of elements as saved
 	res, err := db.GetOperations(pid.Hex(), "", "", "", "")
 	if err != nil {
-		t.Errorf("Unknown error: '%s'", err)
+		t.Errorf("Fail! Unknown error: '%s'", err)
 	}
 	if len(res) != len(ops) {
-		t.Errorf("Expected '%d' got '%d'", len(ops), len(res))
+		t.Errorf("Fail! Expected '%d' got '%d'", len(ops), len(res))
+	} else {
+		t.Logf("Success! Expected '%d' got '%d'", len(ops), len(res))
+	}
+
+	// returns filtered by field 'ticker'
+	res, err = db.GetOperations(pid.Hex(), "ticker", "FXUS", "", "")
+	if err != nil {
+		t.Errorf("Fail! Unknown error: '%s'", err)
+	}
+	if len(res) != 1 {
+		t.Errorf("Fail! Expected '1' got '%d'", len(res))
+	} else {
+		t.Logf("Success! Expected '1' got '%d'", len(res))
+	}
+
+	// returns filtered by field 'ticker'
+	res, err = db.GetOperations(pid.Hex(), "ticker", "FXUS", "", "")
+	if err != nil {
+		t.Errorf("Fail! Unknown error: '%s'", err)
+	}
+	if len(res) != 1 {
+		t.Errorf("Fail! Expected '1' got '%d'", len(res))
+	} else {
+		t.Logf("Success! Expected '1' got '%d'", len(res))
+	}
+
+	// check returns empty result when
+	res, err = db.GetOperations(pid.Hex(), "ticker", "FXUSS", "", "")
+	if err != nil {
+		t.Errorf("Fail! Unknown error: '%s'", err)
+	}
+	if len(res) != 0 {
+		t.Errorf("Fail! Expected '0' got '%d'", len(res))
+	} else {
+		t.Logf("Success! Expected '0' got '%d'", len(res))
+	}
+
+	// returns filtered by field 'ticker'
+	res, err = db.GetOperations(pid.Hex(), "curr", "RUB", "", "")
+	if err != nil {
+		t.Errorf("Fail! Unknown error: '%s'", err)
+	}
+	if len(res) != len(ops) {
+		t.Errorf("Fail! Expected '%d' got '%d'", len(ops), len(res))
+	} else {
+		t.Logf("Success! Expected '%d' got '%d'", len(ops), len(res))
+	}
+
+	timeBound := now.AddDate(0, 0, 1).Format("2006-01-02T15:04:05Z")
+
+	// returns operations grater than specified
+	res, err = db.GetOperations(pid.Hex(), "", "", timeBound, "")
+	if err != nil {
+		t.Errorf("Fail! Unknown error: '%s'", err)
+	}
+	if len(res) != 1 {
+		t.Errorf("Fail! Expected '1' got '%v'", timeBound)
 	} else {
 		t.Logf("Success! Expected '%s'", err)
 	}
 
-	// returns same number of elements as saved
-	res, err = db.GetOperations(pid.Hex(), "Ticker", "FXUS", "", "")
+	// returns operations grater than specified
+	res, err = db.GetOperations(pid.Hex(), "", "", "", timeBound)
 	if err != nil {
-		t.Errorf("Unknown error: '%s'", err)
+		t.Errorf("Fail! Unknown error: '%s'", err)
 	}
 	if len(res) != 1 {
-		t.Errorf("Expected '%d' got '%d'", len(ops), len(res))
+		t.Errorf("Fail! Expected '1' got '%v'", timeBound)
 	} else {
 		t.Logf("Success! Expected '%s'", err)
 	}
@@ -133,12 +214,12 @@ func TestGetOperations(t *testing.T) {
 	_, err = db.GetOperations("", "", "", "", "")
 	expectedErrMsg := "the provided hex string is not a valid ObjectID"
 	if err == nil {
-		t.Errorf("No error! Expected '%s'", expectedErrMsg)
+		t.Errorf("Fail! Expected '%s'", expectedErrMsg)
 	} else {
 		if err.Error() != expectedErrMsg {
-			t.Errorf("Expected '%s' got '%s'", expectedErrMsg, err)
+			t.Errorf("Fail! Expected '%s' got '%s'", expectedErrMsg, err)
 		} else {
-			t.Logf("Success! Expected '%s'", err)
+			t.Logf("Success! Expected '%s' got '%s'", expectedErrMsg, err)
 		}
 	}
 
@@ -151,14 +232,14 @@ func TestGetOperations(t *testing.T) {
 	} else {
 
 		if err.Error() != expectedErrMsg {
-			t.Errorf("Expected '%s' got '%s'", expectedErrMsg, err)
+			t.Errorf("Fail! Expected '%s' got '%s'", expectedErrMsg, err)
 		} else {
-			t.Logf("Success! Expected '%s'", err)
+			t.Logf("Success! Expected '%s' got '%s'", expectedErrMsg, err)
 		}
 	}
 
 	removeTestPortfolio(pid)
-	db.operations.DeleteMany(db.context(), bson.M{"pid": pid}, options.Delete())
+	removeTestOperations(pid)
 }
 
 func addTestPortfolio() primitive.ObjectID {
@@ -178,6 +259,14 @@ func removeTestPortfolio(id primitive.ObjectID) {
 	opts := options.Delete()
 
 	db.portfolios.DeleteOne(ctx, filter, opts)
+}
+
+func removeTestOperations(pid primitive.ObjectID) {
+	ctx := db.context()
+	filter := bson.M{"pid": pid}
+	opts := options.Delete()
+
+	db.portfolios.DeleteMany(ctx, filter, opts)
 }
 
 func getOperations(pid primitive.ObjectID, now time.Time) []models.Operation {
@@ -200,7 +289,7 @@ func getOperations(pid primitive.ObjectID, now time.Time) []models.Operation {
 		Volume:        1,
 		FIGI:          "BBG0013HGFT4",
 		Ticker:        "RUB",
-		DateTime:      now.AddDate(0, 0, 1),
+		DateTime:      now.AddDate(0, 0, 2),
 		OperationType: models.BrokerageFee,
 	}
 	ops = append(ops, op1, op2)

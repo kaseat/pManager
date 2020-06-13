@@ -10,6 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// SaveSingleOperation saves single opertion into a storage
+func (db Db) SaveSingleOperation(portfolioID string, op models.Operation) error {
+	ops := []models.Operation{op}
+	return db.SaveMultipleOperations(portfolioID, ops)
+}
+
 // SaveMultipleOperations saves multiple opertions into a storage
 func (db Db) SaveMultipleOperations(portfolioID string, ops []models.Operation) error {
 	pid, err := db.findPortfolio(portfolioID)
@@ -69,12 +75,12 @@ func (db Db) GetOperations(portfolioID string, key string, value string, from st
 	}
 
 	if dtime, err := time.Parse("2006-01-02T15:04:05Z07:00", from); err == nil {
-		and = append(and, bson.M{"datetime": bson.M{"$gte": dtime}})
+		and = append(and, bson.M{"time": bson.M{"$gte": dtime}})
 		hasParams = true
 	}
 
 	if dtime, err := time.Parse("2006-01-02T15:04:05Z07:00", to); err == nil {
-		and = append(and, bson.M{"datetime": bson.M{"$lte": dtime}})
+		and = append(and, bson.M{"time": bson.M{"$lte": dtime}})
 		hasParams = true
 	}
 
@@ -84,7 +90,7 @@ func (db Db) GetOperations(portfolioID string, key string, value string, from st
 	}
 
 	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"datetime": 1})
+	findOptions.SetSort(bson.M{"time": 1})
 	return db.getOperations(filter, findOptions)
 }
 
