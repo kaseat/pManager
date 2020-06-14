@@ -4,23 +4,31 @@ import "time"
 
 // Operation represents market operation
 type Operation struct {
-	PortfolioID   string    `json:"pid,omitempty"`
-	OperationID   string    `json:"id" example:"5edbc0a72c857652a0542fab"`
-	Currency      Currency  `json:"currency" example:"USD"`
-	Price         float64   `json:"price" example:"293.61"`
-	Volume        int64     `json:"vol" example:"100"`
-	FIGI          string    `json:"figi" example:"BBG00MVRXDB0"`
-	ISIN          string    `json:"isin" example:"BBG00MVRXDB0"`
-	Ticker        string    `json:"ticker" example:"VOO"`
-	DateTime      time.Time `json:"date" example:"2020-06-06T15:54:05Z"`
-	OperationType Type      `json:"type" example:"sell"`
+	PortfolioID   string        `json:"pid,omitempty"`
+	OperationID   string        `json:"id" example:"5edbc0a72c857652a0542fab"`
+	Currency      Currency      `json:"currency" example:"USD"`
+	Price         float64       `json:"price" example:"293.61"`
+	Volume        int64         `json:"vol" example:"100"`
+	FIGI          string        `json:"figi" example:"BBG00MVRXDB0"`
+	ISIN          string        `json:"isin" example:"BBG00MVRXDB0"`
+	Ticker        string        `json:"ticker" example:"VOO"`
+	DateTime      time.Time     `json:"date" example:"2020-06-06T15:54:05Z"`
+	OperationType OperationType `json:"type" example:"sell"`
+}
+
+// Portfolio represets a range of investments
+type Portfolio struct {
+	PortfolioID string `json:"id" example:"5edb2a0e550dfc5f16392838"`
+	UserID      string `json:"userId" example:"5e691429a9bfccacfed4ae2a"`
+	Name        string `json:"name" example:"Best portfolio"`
+	Description string `json:"description" example:"Best portfolio ever!!!"`
 }
 
 // Currency represents string currency
 type Currency string
 
 // Type is market operation type
-type Type string
+type OperationType string
 
 const (
 	// RUB is Russian Rubble
@@ -33,17 +41,17 @@ const (
 
 const (
 	// Buy operation
-	Buy Type = "buy"
+	Buy OperationType = "buy"
 	// Sell operation
-	Sell Type = "sell"
+	Sell OperationType = "sell"
 	// BrokerageFee operation
-	BrokerageFee Type = "brokerageFee"
+	BrokerageFee OperationType = "brokerageFee"
 	// ExchangeFee operation
-	ExchangeFee Type = "exchangeFee"
+	ExchangeFee OperationType = "exchangeFee"
 	// PayIn operation
-	PayIn Type = "payIn"
+	PayIn OperationType = "payIn"
 	// PayOut operation
-	PayOut Type = "payOut"
+	PayOut OperationType = "payOut"
 	// Coupon operation
-	Coupon Type = "coupon"
+	Coupon OperationType = "coupon"
 )

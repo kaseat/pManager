@@ -22,6 +22,19 @@ func (db Db) SaveLastUpdateTime(provider string, date time.Time) error {
 	return nil
 }
 
+// ClearLastUpdateTime removes last date when specified provider made sync
+func (db Db) ClearLastUpdateTime(provider string) error {
+	ctx := db.context()
+	filter := bson.M{"provider": provider}
+	opts := options.Delete()
+
+	_, err := db.syncs.DeleteOne(ctx, filter, opts)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetLastUpdateTime receives last date when specified provider made sync
 func (db Db) GetLastUpdateTime(provider string) (time.Time, error) {
 	filter := bson.M{"provider": provider}

@@ -19,5 +19,6 @@ type Db struct {
 	syncs      *mongo.Collection
 	operations *mongo.Collection
 	portfolios *mongo.Collection
+	users      *mongo.Collection
 	context    dbContext
 }

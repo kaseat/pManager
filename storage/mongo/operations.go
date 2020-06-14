@@ -11,9 +11,51 @@ import (
 )
 
 // SaveSingleOperation saves single opertion into a storage
-func (db Db) SaveSingleOperation(portfolioID string, op models.Operation) error {
+func (db Db) SaveSingleOperation(pid string, op models.Operation) error {
 	ops := []models.Operation{op}
-	return db.SaveMultipleOperations(portfolioID, ops)
+	return db.SaveMultipleOperations(pid, ops)
+}
+
+// RemoveSingleOperation removes operation by Id
+func (db Db) RemoveSingleOperation(portfolioID string, operationID string) (bool, error) {
+	pid, err := primitive.ObjectIDFromHex(portfolioID)
+	if err != nil {
+		return false, fmt.Errorf("Could not decode portfolio Id (%s). Internal error : %s", portfolioID, err)
+	}
+	oid, err := primitive.ObjectIDFromHex(operationID)
+	if err != nil {
+		return false, fmt.Errorf("Could not decode operation Id (%s). Internal error : %s", operationID, err)
+	}
+	ctx := db.context()
+	filter := bson.M{"$and": []interface{}{bson.M{"_id": oid}, bson.M{"pid": pid}}}
+	opts := options.Delete()
+
+	res, err := db.operations.DeleteOne(ctx, filter, opts)
+	if err != nil {
+		return false, err
+	}
+	if res.DeletedCount >= 1 {
+		return true, nil
+	}
+	return false, nil
+}
+
+// RemoveAllOperations removes all operations for provided portfolio Id
+func (db Db) RemoveAllOperations(portfolioID string) (int64, error) {
+	pid, err := primitive.ObjectIDFromHex(portfolioID)
+	if err != nil {
+		return 0, fmt.Errorf("Could not decode portfolio Id (%s). Internal error : %s", portfolioID, err)
+	}
+
+	ctx := db.context()
+	filter := bson.M{"pid": pid}
+	opts := options.Delete()
+
+	res, err := db.operations.DeleteMany(ctx, filter, opts)
+	if err != nil {
+		return 0, err
+	}
+	return res.DeletedCount, nil
 }
 
 // SaveMultipleOperations saves multiple opertions into a storage
@@ -58,12 +100,9 @@ func (db Db) SaveMultipleOperations(portfolioID string, ops []models.Operation) 
 
 // GetOperations finds operations depending on input prameters
 func (db Db) GetOperations(portfolioID string, key string, value string, from string, to string) ([]models.Operation, error) {
-	pid, err := db.findPortfolio(portfolioID)
+	pid, err := primitive.ObjectIDFromHex(portfolioID)
 	if err != nil {
-		return []models.Operation{}, err
-	}
-	if pid.IsZero() {
-		return []models.Operation{}, fmt.Errorf("No portfolio found with %s Id", portfolioID)
+		return nil, fmt.Errorf("Could not decode portfolio Id (%s). Internal error : %s", portfolioID, err)
 	}
 
 	filter := bson.M{"pid": pid}
@@ -159,7 +198,7 @@ func (db Db) getOperations(filter primitive.M, findOptions *options.FindOptions)
 			ISIN:          op.ISIN,
 			Ticker:        op.Ticker,
 			DateTime:      op.DateTime,
-			OperationType: models.Type(op.OperationType),
+			OperationType: models.OperationType(op.OperationType),
 		}
 		results[i] = data
 	}
