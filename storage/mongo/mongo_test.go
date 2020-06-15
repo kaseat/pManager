@@ -24,6 +24,150 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func TestPortfolioDeletion(t *testing.T) {
+	// arrange
+	u := addTestUser()
+	p := models.Portfolio{
+		Name:        "name",
+		Description: "description",
+	}
+
+	p1, _ := db.AddPortfolio(u.Hex(), p)
+	p2, _ := db.AddPortfolio(u.Hex(), p)
+	p3, _ := db.AddPortfolio(u.Hex(), p)
+
+	ops1 := getOperations(getTime())
+	ops2 := getOperations(getTime())
+	ops3 := getOperations(getTime())
+
+	db.SaveMultipleOperations(p1, ops1)
+	db.SaveMultipleOperations(p2, ops2)
+	db.SaveMultipleOperations(p3, ops3)
+
+	//
+	resBool, err := db.RemovePortfolio(u.Hex(), p1)
+	if err != nil {
+		t.Errorf("Fail! Could not remove test portfolio. Internal error: %s", err)
+	}
+	if resBool == true {
+		t.Logf("Success! Expected %v, got %v", true, resBool)
+	} else {
+		t.Errorf("Fail! Portfolio did not remove as it should! Expected %v, got %v", true, resBool)
+	}
+
+	resArr, err := db.GetAllPortfolios(u.Hex())
+	if err != nil {
+		t.Errorf("Fail! Could not get test portfolio. Internal error: %s", err)
+	}
+	if len(resArr) == 2 {
+		t.Logf("Success! Expected %d, got %d", 2, len(resArr))
+	} else {
+		t.Errorf("Fail! Received number of portfolios not match! Expected %d, got %d", 2, len(resArr))
+	}
+
+	resInt, err := db.RemoveAllPortfolios(u.Hex())
+	if err != nil {
+		t.Errorf("Fail! Could not remove all test portfolios. Internal error: %s", err)
+	}
+	if resInt == 2 {
+		t.Logf("Success! Expected %d, got %d", 2, resInt)
+	} else {
+		t.Errorf("Fail! All portfolios did not remove as it should! Expected %d, got %d", 2, resInt)
+	}
+
+	resArr, err = db.GetAllPortfolios(u.Hex())
+	if err != nil {
+		t.Errorf("Fail! Could not get test portfolio. Internal error: %s", err)
+	}
+	if len(resArr) == 0 {
+		t.Logf("Success! Expected %d, got %d", 0, len(resArr))
+	} else {
+		t.Errorf("Fail! Received number of portfolios not match! Expected %d, got %d", 0, len(resArr))
+	}
+
+	ops, _ := db.GetOperations(p2, "", "", "", "")
+	if len(ops) == 0 {
+		t.Logf("Success! Expected %d, got %d", 2, resInt)
+	} else {
+		t.Errorf("Fail! All portfolios did not remove as it should! Expected %d, got %d", 2, resInt)
+	}
+
+	// feed RemovePortfolio with malformed user Id
+	malformedID := "ffff"
+	_, err = db.RemovePortfolio(malformedID, p1)
+	expectedErrMsg := fmt.Sprintf("Could not decode user Id (%s). Internal error : the provided hex string is not a valid ObjectID", malformedID)
+	if err == nil {
+		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
+	} else {
+		if err.Error() != expectedErrMsg {
+			t.Errorf("Fail! Expected '%s' got '%s'", expectedErrMsg, err)
+		} else {
+			t.Logf("Success! Expected '%s' got '%s'", expectedErrMsg, err)
+		}
+	}
+
+	// feed RemovePortfolio with malformed portfolio Id
+	_, err = db.RemovePortfolio(u.Hex(), malformedID)
+	expectedErrMsg = fmt.Sprintf("Could not decode portfolio Id (%s). Internal error : the provided hex string is not a valid ObjectID", malformedID)
+	if err == nil {
+		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
+	} else {
+		if err.Error() != expectedErrMsg {
+			t.Errorf("Fail! Expected '%s' got '%s'", expectedErrMsg, err)
+		} else {
+			t.Logf("Success! Expected '%s' got '%s'", expectedErrMsg, err)
+		}
+	}
+
+	// feed RemoveAllPortfolios with malformed user Id
+	resInt, err = db.RemoveAllPortfolios(malformedID)
+	if err == nil {
+		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
+	} else {
+		if err.Error() != expectedErrMsg {
+			t.Errorf("Fail! Expected '%s' got '%s'", expectedErrMsg, err)
+		} else {
+			t.Logf("Success! Expected '%s' got '%s'", expectedErrMsg, err)
+		}
+	}
+
+	// feed RemovePortfolio with unknown user Id
+	unknownID := "5edbc0a72c857652a0542fab"
+	resBool, err = db.RemovePortfolio(unknownID, p1)
+	if err != nil {
+		t.Errorf("Fail! Could not remove all portfolios. Internal error: %s", err)
+	}
+	if resBool == false {
+		t.Logf("Success! Expected %v, got %v", false, resBool)
+	} else {
+		t.Errorf("Fail! Portfolio removed, but it should not! Expected %v, got %v", false, resBool)
+	}
+
+	// feed RemoveAllPortfolios with unknown user Id
+	resInt, err = db.RemoveAllPortfolios(unknownID)
+	if err != nil {
+		t.Errorf("Fail! Could not remove all portfolios. Internal error: %s", err)
+	}
+	if resInt == 0 {
+		t.Logf("Success! Expected %v, got %v", 0, resInt)
+	} else {
+		t.Errorf("Fail! Portfolio removed, but it should not! Expected %v, got %v", 0, resInt)
+	}
+
+	// feed RemovePortfolio with unknown portfolio Id
+	_, err = db.RemovePortfolio(u.Hex(), unknownID)
+	expectedErrMsg = "mongo: no documents in result"
+	if err != nil {
+		t.Errorf("Fail! Could not remove all portfolios. Internal error: %s", err)
+	}
+	if resBool == false {
+		t.Logf("Success! Expected %v, got %v", false, resBool)
+	} else {
+		t.Errorf("Fail! Portfolio removed, but it should not! Expected %v, got %v", false, resBool)
+	}
+
+}
+
 func TestPortfolios(t *testing.T) {
 	// arrange
 	u := addTestUser()
@@ -33,6 +177,11 @@ func TestPortfolios(t *testing.T) {
 	}
 	// check adding and getting portfolio
 	pid, err := db.AddPortfolio(u.Hex(), p)
+	if err != nil {
+		t.Errorf("Fail! Could not save test portfolio. Internal error: %s", err)
+	}
+
+	pid, err = db.AddPortfolio(u.Hex(), p)
 	if err != nil {
 		t.Errorf("Fail! Could not save test portfolio. Internal error: %s", err)
 	}
@@ -66,13 +215,37 @@ func TestPortfolios(t *testing.T) {
 	if res.Name == p.Name {
 		t.Logf("Success! Expected %s, got %s", p.Name, res.Name)
 	} else {
-		t.Errorf("Fail! Saved and fetched time not match! Expected %s, got %s", p.Name, res.Name)
+		t.Errorf("Fail! Saved and fetched updated values not match! Expected %s, got %s", p.Name, res.Name)
+	}
+
+	// ensure we got all portfolios
+	resArr, err := db.GetAllPortfolios(u.Hex())
+	if err != nil {
+		t.Errorf("Fail! Could not get test portfolio. Internal error: %s", err)
+	}
+	if len(resArr) == 2 {
+		t.Logf("Success! Expected %d, got %d", 2, len(resArr))
+	} else {
+		t.Errorf("Fail! Received number of portfolios not match! Expected %d, got %d", 2, len(resArr))
 	}
 
 	// feed AddPortfolio with malformed user Id
 	malformedID := "ffff"
 	_, err = db.AddPortfolio(malformedID, p)
 	expectedErrMsg := "the provided hex string is not a valid ObjectID"
+	if err == nil {
+		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
+	} else {
+		if err.Error() != expectedErrMsg {
+			t.Errorf("Fail! Expected '%s' got '%s'", expectedErrMsg, err)
+		} else {
+			t.Logf("Success! Expected '%s' got '%s'", expectedErrMsg, err)
+		}
+	}
+
+	// feed GetAllPortfolios with malformed user Id
+	_, err = db.GetAllPortfolios(malformedID)
+	expectedErrMsg = fmt.Sprintf("Could not decode user Id (%s). Internal error : the provided hex string is not a valid ObjectID", malformedID)
 	if err == nil {
 		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
 	} else {
@@ -171,6 +344,17 @@ func TestPortfolios(t *testing.T) {
 		t.Errorf("Fail! Expected %v, got %v", false, resBool)
 	}
 
+	// feed GetAllPortfolios with unknown user Id
+	resArr, err = db.GetAllPortfolios(unknownID)
+	if err != nil {
+		t.Errorf("Fail! Could not get all portfolios. Internal error: %s", err)
+	}
+	if len(resArr) == 0 {
+		t.Logf("Success! Expected %d, got %d", 0, len(resArr))
+	} else {
+		t.Errorf("Fail! Expected %d, got %d", 0, len(resArr))
+	}
+
 	// feed GetPortfolio with unknown user Id
 	_, err = db.GetPortfolio(unknownID, pid)
 	expectedErrMsg = "mongo: no documents in result"
@@ -244,7 +428,7 @@ func TestLastUpdateTimeStorage(t *testing.T) {
 func TestMultipleOperations(t *testing.T) {
 	pid := addTestPortfolio()
 	now := getTime()
-	ops := getOperations(pid, now)
+	ops := getOperations(now)
 
 	// ensure we can insert multiple operations with no issues
 	err := db.SaveMultipleOperations(pid.Hex(), ops)
@@ -508,7 +692,7 @@ func TestMultipleOperations(t *testing.T) {
 func TestSaveSingleOperation(t *testing.T) {
 	pid := addTestPortfolio()
 	now := getTime()
-	ops := getOperations(pid, now)
+	ops := getOperations(now)
 
 	// ensure we can get back inserted operation
 	err := db.SaveSingleOperation(pid.Hex(), ops[0])
@@ -520,10 +704,10 @@ func TestSaveSingleOperation(t *testing.T) {
 	if err != nil {
 		t.Errorf("Fail! Unknown error: '%s'", err)
 	}
-	if ops[0].PortfolioID != res[0].PortfolioID {
-		t.Errorf("Fail! Expected '%v' got '%v'", ops[0].PortfolioID, res[0].PortfolioID)
+	if ops[0].DateTime != res[0].DateTime {
+		t.Errorf("Fail! Expected '%v' got '%v'", ops[0].DateTime, res[0].DateTime)
 	} else {
-		t.Logf("Success! Expected '%v' got '%v'", ops[0].PortfolioID, res[0].PortfolioID)
+		t.Logf("Success! Expected '%v' got '%v'", ops[0].DateTime, res[0].DateTime)
 	}
 
 	removeTestPortfolio(pid)
@@ -589,10 +773,9 @@ func getTime() time.Time {
 	return t
 }
 
-func getOperations(pid primitive.ObjectID, now time.Time) []models.Operation {
+func getOperations(now time.Time) []models.Operation {
 	ops := []models.Operation{}
 	op1 := models.Operation{
-		PortfolioID:   pid.Hex(),
 		Currency:      models.RUB,
 		Price:         50.5351,
 		Volume:        150,
@@ -603,7 +786,6 @@ func getOperations(pid primitive.ObjectID, now time.Time) []models.Operation {
 	}
 
 	op2 := models.Operation{
-		PortfolioID:   pid.Hex(),
 		Currency:      models.RUB,
 		Price:         0.89,
 		Volume:        1,
