@@ -12,52 +12,6 @@
     "host": "localhost",
     "basePath": "/api",
     "paths": {
-        "/auth/login": {
-            "post": {
-                "description": "get string by ID",
-                "consumes": [
-                    "application/x-www-form-urlencoded"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "security"
-                ],
-                "summary": "Show a account",
-                "operationId": "get-string-by-int",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User name",
-                        "name": "username",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Password",
-                        "name": "password",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.tokenResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/api.errorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/portfolios": {
             "get": {
                 "security": [
@@ -477,6 +431,98 @@
                 ],
                 "summary": "Validate token",
                 "operationId": "validate-token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.tokenResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/login": {
+            "post": {
+                "description": "Checks user credentials and returns JWT if ok",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Login",
+                "operationId": "login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User name",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.tokenResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/signup": {
+            "post": {
+                "description": "Creates new user",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Create new user",
+                "operationId": "sign-up",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User name",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

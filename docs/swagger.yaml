@@ -117,37 +117,6 @@ info:
   title: Portfolio manager API
   version: "1.0"
 paths:
-  /auth/login:
-    post:
-      consumes:
-      - application/x-www-form-urlencoded
-      description: get string by ID
-      operationId: get-string-by-int
-      parameters:
-      - description: User name
-        in: formData
-        name: username
-        required: true
-        type: string
-      - description: Password
-        in: formData
-        name: password
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/api.tokenResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/api.errorResponse'
-      summary: Show a account
-      tags:
-      - security
   /portfolios:
     delete:
       description: Deletes all portfolios an all associated operations
@@ -428,6 +397,68 @@ paths:
       summary: Validate token
       tags:
       - security
+  /user/login:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Checks user credentials and returns JWT if ok
+      operationId: login
+      parameters:
+      - description: User name
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.tokenResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: Login
+      tags:
+      - user
+  /user/signup:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Creates new user
+      operationId: sign-up
+      parameters:
+      - description: User name
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.tokenResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      summary: Create new user
+      tags:
+      - user
 securityDefinitions:
   ApiKeyAuth:
     in: header

@@ -57,7 +57,7 @@ func main() {
 	portfolios.HandleFunc("/{id}/operations", api.DeleteAllOperations).Methods("DELETE")
 	portfolios.HandleFunc("/{id}/average", api.GetAveragePrice).Methods("GET")
 	portfolios.HandleFunc("/{id}/balance", api.GetBalance).Methods("GET")
-	router.HandleFunc("/api/auth/login", api.GetToken).Methods("POST")
-	router.HandleFunc("/api/auth/signup", api.CreateOwner).Methods("POST")
+	router.HandleFunc("/api/user/login", api.Login).Methods("POST")
+	router.HandleFunc("/api/user/signup", api.SignUp).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8081", router))
 }

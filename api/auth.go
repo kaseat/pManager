@@ -7,6 +7,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/kaseat/pManager/auth"
+	"github.com/kaseat/pManager/storage"
 )
 
 var secret = []byte("my_secret_key")
@@ -17,19 +18,19 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-// GetToken returns jwt token
-// @Summary Show a account
-// @Description get string by ID
-// @ID get-string-by-int
-// @Tags security
+// Login returns jwt token
+// @Summary Login
+// @Description Checks user credentials and returns JWT if ok
+// @ID login
+// @Tags user
 // @Accept x-www-form-urlencoded
 // @Produce json
 // @Param username formData string true "User name"
 // @Param password formData string true "Password"
 // @Success 200 {object} tokenResponse
 // @Failure 401 {object} errorResponse
-// @Router /auth/login [post]
-func GetToken(w http.ResponseWriter, r *http.Request) {
+// @Router /user/login [post]
+func Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	u := user{
@@ -37,9 +38,73 @@ func GetToken(w http.ResponseWriter, r *http.Request) {
 		Password: r.FormValue("password"),
 	}
 
-	_, err := auth.CheckСredentials(u.Username, u.Password)
+	valid, err := auth.CheckСredentials(u.Username, u.Password)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	if !valid {
+		writeError(w, http.StatusUnauthorized, "Invalid credentials")
+		return
+	}
+
+	claims := &Claims{
+		Username: u.Username,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(50 * time.Minute).Unix(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(secret)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeOk(w, tokenResponse{
+		Status: ok,
+		Token:  tokenString,
+	})
+}
+
+// SignUp creates new user
+// @Summary Create new user
+// @Description Creates new user
+// @ID sign-up
+// @Tags user
+// @Accept x-www-form-urlencoded
+// @Produce json
+// @Param username formData string true "User name"
+// @Param password formData string true "Password"
+// @Success 200 {object} tokenResponse
+// @Failure 401 {object} errorResponse
+// @Router /user/signup [post]
+func SignUp(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	u := user{
+		Username: r.FormValue("username"),
+		Password: r.FormValue("password"),
+	}
+	s := storage.GetStorage()
+	pass, err := s.GetPassword(u.Username)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	if pass != "" {
+		writeError(w, http.StatusBadRequest, "User with this login already exists")
+		return
+	}
+
+	saved, err := auth.SaveСredentials(u.Username, u.Password)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	if !saved {
+		writeError(w, http.StatusBadRequest, "Could not save password")
 		return
 	}
 

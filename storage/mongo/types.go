@@ -20,5 +20,6 @@ type Db struct {
 	operations *mongo.Collection
 	portfolios *mongo.Collection
 	users      *mongo.Collection
+	passwords  *mongo.Collection
 	context    dbContext
 }
