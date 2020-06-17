@@ -9,9 +9,12 @@ import (
 
 // Db represents data storage
 type Db interface {
-	SavePassword(user string, hash string) error
-	GetPassword(user string) (string, error)
-	DeletePassword(user string) (bool, error)
+	AddUser(login, email, hash string) (string, error)
+	UpdateUser(login string, user models.User) (bool, error)
+	GetUserByLogin(login string) (models.User, error)
+	GetUserPassword(login string) (string, error)
+	UpdateUserPassword(login, hash string) (bool, error)
+	DeleteUser(login string) (bool, error)
 	SaveLastUpdateTime(provider string, date time.Time) error
 	GetLastUpdateTime(provider string) (time.Time, error)
 	SaveSingleOperation(portfolioID string, op models.Operation) error

@@ -24,10 +24,17 @@ type Portfolio struct {
 	Description string `json:"description" example:"Best portfolio ever!!!"`
 }
 
+// User represents user
+type User struct {
+	UserID string `json:"id" example:"5edb2a0e550dfc5f16392838"`
+	Login  string `json:"login" example:"mark123"`
+	Email  string `json:"email" example:"mark123@abc.com"`
+}
+
 // Currency represents string currency
 type Currency string
 
-// Type is market operation type
+// OperationType is market operation type
 type OperationType string
 
 const (

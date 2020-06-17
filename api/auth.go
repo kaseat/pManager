@@ -7,7 +7,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/kaseat/pManager/auth"
-	"github.com/kaseat/pManager/storage"
 )
 
 var secret = []byte("my_secret_key")
@@ -86,16 +85,6 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	u := user{
 		Username: r.FormValue("username"),
 		Password: r.FormValue("password"),
-	}
-	s := storage.GetStorage()
-	pass, err := s.GetPassword(u.Username)
-	if err != nil {
-		writeError(w, http.StatusUnauthorized, err.Error())
-		return
-	}
-	if pass != "" {
-		writeError(w, http.StatusBadRequest, "User with this login already exists")
-		return
 	}
 
 	saved, err := auth.SaveСredentials(u.Username, u.Password)

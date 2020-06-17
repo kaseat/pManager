@@ -15,7 +15,7 @@ import (
 // CheckСredentials checks credentials
 func CheckСredentials(user, password string) (bool, error) {
 	s := storage.GetStorage()
-	hash, err := s.GetPassword(user)
+	hash, err := s.GetUserPassword(user)
 	if err != nil {
 		return false, err
 	}
@@ -38,7 +38,7 @@ func SaveСredentials(user, password string) (bool, error) {
 		return false, err
 	}
 	s := storage.GetStorage()
-	err = s.SavePassword(user, hash)
+	_, err = s.AddUser(user, "", hash)
 	if err != nil {
 		return false, err
 	}
