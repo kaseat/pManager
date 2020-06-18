@@ -2,12 +2,12 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/kaseat/pManager/portfolio"
+	"github.com/kaseat/pManager/models"
+	"github.com/kaseat/pManager/storage"
 )
 
 // CreateSinglePortfolio creates single portfolio
@@ -33,16 +33,14 @@ func CreateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	}
 	user := r.Header.Get("user")
 
-	found, o, err := portfolio.GetOwnerByLogin(user)
+	s := storage.GetStorage()
+	u, err := s.GetUserByLogin(user)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
-		return
-	}
-	var p portfolio.Portfolio
+
+	var p models.Portfolio
 	err = json.Unmarshal(body, &p)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -54,13 +52,13 @@ func CreateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err = o.AddPortfolio(p.Name, p.Description)
+	pid, err := s.AddPortfolio(u.UserID, p)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	writeOk(w, addPortfoliioSuccess{PortfolioID: p.PortfolioID})
+	writeOk(w, addPortfoliioSuccess{PortfolioID: pid})
 }
 
 // ReadSinglePortfolio gets single portfolio by id
@@ -69,7 +67,7 @@ func CreateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 // @id portfolio-get-by-id
 // @produce json
 // @param id path string true "Portfolio Id"
-// @success 200 {object} portfolio.Portfolio "Returns portfolio info if any"
+// @success 200 {object} models.Portfolio "Returns portfolio info if any"
 // @failure 400 {object} errorResponse "Returns when any processing error occurs"
 // @failure 401 {object} errorResponse "Returns when authentication error occurs"
 // @tags portfolios
@@ -81,23 +79,16 @@ func ReadSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	user := r.Header.Get("user")
 
-	found, o, err := portfolio.GetOwnerByLogin(user)
+	s := storage.GetStorage()
+	u, err := s.GetUserByLogin(user)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
 		return
 	}
 
-	found, p, err := o.GetPortfolio(id)
+	p, err := s.GetPortfolio(u.UserID, id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No portfolio found with Id: ", id))
 		return
 	}
 
@@ -109,7 +100,7 @@ func ReadSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 // @description Gets all portfolios avaliable
 // @id portfolio-get-all
 // @produce json
-// @success 200 {array} portfolio.Portfolio "Returns portfolio info"
+// @success 200 {array} models.Portfolio "Returns portfolio info"
 // @failure 400 {object} errorResponse "Returns when any processing error occurs"
 // @failure 401 {object} errorResponse "Returns when authentication error occurs"
 // @tags portfolios
@@ -120,24 +111,17 @@ func ReadAllPortfolios(w http.ResponseWriter, r *http.Request) {
 
 	user := r.Header.Get("user")
 
-	found, o, err := portfolio.GetOwnerByLogin(user)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
-		return
-	}
-
-	ps, err := o.GetAllPortfolios()
+	s := storage.GetStorage()
+	u, err := s.GetUserByLogin(user)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if len(ps) == 0 {
-		ps = []portfolio.Portfolio{}
+	ps, err := s.GetAllPortfolios(u.UserID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	writeOk(w, ps)
@@ -161,7 +145,7 @@ func UptateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	decoder := json.NewDecoder(r.Body)
-	var p portfolio.Portfolio
+	var p models.Portfolio
 
 	err := decoder.Decode(&p)
 	if err != nil {
@@ -175,26 +159,22 @@ func UptateSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := r.Header.Get("user")
-	found, o, err := portfolio.GetOwnerByLogin(user)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
-		return
-	}
+	pid := mux.Vars(r)["id"]
 
-	p.PortfolioID = mux.Vars(r)["id"]
-	p.OwnerID = o.OwnerID
-
-	hasUptated, err := p.UpdatePortfolio()
+	s := storage.GetStorage()
+	u, err := s.GetUserByLogin(user)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	writeOk(w, putPortfoliioSuccess{HasModified: hasUptated})
+	modified, err := s.UpdatePortfolio(u.UserID, pid, p)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeOk(w, putPortfoliioSuccess{HasModified: modified})
 }
 
 // DeleteSinglePortfolio deletes single portfolio by id
@@ -214,23 +194,20 @@ func DeleteSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	user := r.Header.Get("user")
 
-	found, o, err := portfolio.GetOwnerByLogin(user)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
-		return
-	}
-
-	hasDeleted, err := o.DeletePortfolio(id)
+	s := storage.GetStorage()
+	u, err := s.GetUserByLogin(user)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	writeOk(w, delPortfoliioSuccess{HasDeleted: hasDeleted})
+	deleted, err := s.RemovePortfolio(u.UserID, id)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeOk(w, delPortfoliioSuccess{HasDeleted: deleted})
 }
 
 // DeleteAllPortfolios deletes all portfolios
@@ -249,21 +226,18 @@ func DeleteAllPortfolios(w http.ResponseWriter, r *http.Request) {
 
 	user := r.Header.Get("user")
 
-	found, o, err := portfolio.GetOwnerByLogin(user)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
-		return
-	}
-
-	hasDeleted, err := o.DeleteAllPortfolios()
+	s := storage.GetStorage()
+	u, err := s.GetUserByLogin(user)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	writeOk(w, delPortfoliioSuccess{HasDeleted: hasDeleted})
+	num, err := s.RemoveAllPortfolios(u.UserID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeOk(w, delPortfoliioSuccess{HasDeleted: num > 0})
 }

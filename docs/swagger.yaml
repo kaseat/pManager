@@ -67,6 +67,18 @@ definitions:
       token:
         type: string
     type: object
+  models.Portfolio:
+    properties:
+      description:
+        example: Best portfolio ever!!!
+        type: string
+      id:
+        example: 5edb2a0e550dfc5f16392838
+        type: string
+      name:
+        example: Best portfolio
+        type: string
+    type: object
   portfolio.Operation:
     properties:
       currency:
@@ -92,21 +104,6 @@ definitions:
       vol:
         example: 100
         type: integer
-    type: object
-  portfolio.Portfolio:
-    properties:
-      description:
-        example: Best portfolio ever!!!
-        type: string
-      id:
-        example: 5edb2a0e550dfc5f16392838
-        type: string
-      name:
-        example: Best portfolio
-        type: string
-      ownerId:
-        example: 5e691429a9bfccacfed4ae2a
-        type: string
     type: object
 host: localhost
 info:
@@ -151,7 +148,7 @@ paths:
           description: Returns portfolio info
           schema:
             items:
-              $ref: '#/definitions/portfolio.Portfolio'
+              $ref: '#/definitions/models.Portfolio'
             type: array
         "400":
           description: Returns when any processing error occurs
@@ -243,7 +240,7 @@ paths:
         "200":
           description: Returns portfolio info if any
           schema:
-            $ref: '#/definitions/portfolio.Portfolio'
+            $ref: '#/definitions/models.Portfolio'
         "400":
           description: Returns when any processing error occurs
           schema:

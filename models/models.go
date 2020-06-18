@@ -19,7 +19,7 @@ type Operation struct {
 // Portfolio represets a range of investments
 type Portfolio struct {
 	PortfolioID string `json:"id" example:"5edb2a0e550dfc5f16392838"`
-	UserID      string `json:"userId" example:"5e691429a9bfccacfed4ae2a"`
+	UserID      string `json:"-"`
 	Name        string `json:"name" example:"Best portfolio"`
 	Description string `json:"description" example:"Best portfolio ever!!!"`
 }

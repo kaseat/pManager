@@ -15,6 +15,14 @@ type Db interface {
 	GetUserPassword(login string) (string, error)
 	UpdateUserPassword(login, hash string) (bool, error)
 	DeleteUser(login string) (bool, error)
+
+	AddPortfolio(userID string, p models.Portfolio) (string, error)
+	GetPortfolio(userID string, portfolioID string) (models.Portfolio, error)
+	GetAllPortfolios(userID string) ([]models.Portfolio, error)
+	UpdatePortfolio(userID string, portfolioID string, p models.Portfolio) (bool, error)
+	RemovePortfolio(userID string, portfolioID string) (bool, error)
+	RemoveAllPortfolios(userID string) (int64, error)
+
 	SaveLastUpdateTime(provider string, date time.Time) error
 	GetLastUpdateTime(provider string) (time.Time, error)
 	SaveSingleOperation(portfolioID string, op models.Operation) error

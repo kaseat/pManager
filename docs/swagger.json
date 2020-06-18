@@ -34,7 +34,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/portfolio.Portfolio"
+                                "$ref": "#/definitions/models.Portfolio"
                             }
                         }
                     },
@@ -168,7 +168,7 @@
                     "200": {
                         "description": "Returns portfolio info if any",
                         "schema": {
-                            "$ref": "#/definitions/portfolio.Portfolio"
+                            "$ref": "#/definitions/models.Portfolio"
                         }
                     },
                     "400": {
@@ -639,6 +639,23 @@
                 }
             }
         },
+        "models.Portfolio": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Best portfolio ever!!!"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "5edb2a0e550dfc5f16392838"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Best portfolio"
+                }
+            }
+        },
         "portfolio.Operation": {
             "type": "object",
             "properties": {
@@ -672,27 +689,6 @@
                 "vol": {
                     "type": "integer",
                     "example": 100
-                }
-            }
-        },
-        "portfolio.Portfolio": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Best portfolio ever!!!"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "5edb2a0e550dfc5f16392838"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Best portfolio"
-                },
-                "ownerId": {
-                    "type": "string",
-                    "example": "5e691429a9bfccacfed4ae2a"
                 }
             }
         }
