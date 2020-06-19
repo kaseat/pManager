@@ -74,8 +74,8 @@ func (db Db) GetPortfolio(userID string, portfolioID string) (models.Portfolio, 
 	return result, nil
 }
 
-// GetAllPortfolios gets all portfolio fpvie user Id
-func (db Db) GetAllPortfolios(userID string) ([]models.Portfolio, error) {
+// GetPortfolios gets all portfolio fpvie user Id
+func (db Db) GetPortfolios(userID string) ([]models.Portfolio, error) {
 	uid, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return nil, fmt.Errorf("Could not decode user Id (%s). Internal error : %s", userID, err)
@@ -137,9 +137,9 @@ func (db Db) UpdatePortfolio(userID string, portfolioID string, p models.Portfol
 	return false, nil
 }
 
-// RemovePortfolio removes portfolio by Id
+// DeletePortfolio removes portfolio by Id
 // Also removes all operations associated with this portfolio
-func (db Db) RemovePortfolio(userID string, portfolioID string) (bool, error) {
+func (db Db) DeletePortfolio(userID string, portfolioID string) (bool, error) {
 	uid, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return false, fmt.Errorf("Could not decode user Id (%s). Internal error : %s", userID, err)
@@ -171,8 +171,8 @@ func (db Db) RemovePortfolio(userID string, portfolioID string) (bool, error) {
 	return false, nil
 }
 
-// RemoveAllPortfolios removes all portfolios for provided user
-func (db Db) RemoveAllPortfolios(userID string) (int64, error) {
+// DeletePortfolios removes all portfolios for provided user
+func (db Db) DeletePortfolios(userID string) (int64, error) {
 	uid, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return 0, fmt.Errorf("Could not decode portfolio Id (%s). Internal error : %s", userID, err)
@@ -182,7 +182,7 @@ func (db Db) RemoveAllPortfolios(userID string) (int64, error) {
 	filter := bson.M{"uid": uid}
 	opts := options.Delete()
 
-	ps, err := db.GetAllPortfolios(userID)
+	ps, err := db.GetPortfolios(userID)
 	if err != nil {
 		return 0, err
 	}

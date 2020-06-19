@@ -10,14 +10,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// SaveSingleOperation saves single opertion into a storage
-func (db Db) SaveSingleOperation(pid string, op models.Operation) error {
+// AddOperation saves single opertion into a storage
+func (db Db) AddOperation(pid string, op models.Operation) (string, error) {
 	ops := []models.Operation{op}
-	return db.SaveMultipleOperations(pid, ops)
+	ids, err := db.AddOperations(pid, ops)
+	if err != nil {
+		return "", err
+	}
+	return ids[0], nil
 }
 
-// RemoveSingleOperation removes operation by Id
-func (db Db) RemoveSingleOperation(portfolioID string, operationID string) (bool, error) {
+// DeleteOperation removes operation by Id
+func (db Db) DeleteOperation(portfolioID string, operationID string) (bool, error) {
 	pid, err := primitive.ObjectIDFromHex(portfolioID)
 	if err != nil {
 		return false, fmt.Errorf("Could not decode portfolio Id (%s). Internal error : %s", portfolioID, err)
@@ -40,8 +44,8 @@ func (db Db) RemoveSingleOperation(portfolioID string, operationID string) (bool
 	return false, nil
 }
 
-// RemoveAllOperations removes all operations for provided portfolio Id
-func (db Db) RemoveAllOperations(portfolioID string) (int64, error) {
+// DeleteOperations removes all operations for provided portfolio Id
+func (db Db) DeleteOperations(portfolioID string) (int64, error) {
 	pid, err := primitive.ObjectIDFromHex(portfolioID)
 	if err != nil {
 		return 0, fmt.Errorf("Could not decode portfolio Id (%s). Internal error : %s", portfolioID, err)
@@ -58,14 +62,14 @@ func (db Db) RemoveAllOperations(portfolioID string) (int64, error) {
 	return res.DeletedCount, nil
 }
 
-// SaveMultipleOperations saves multiple opertions into a storage
-func (db Db) SaveMultipleOperations(portfolioID string, ops []models.Operation) error {
+// AddOperations saves multiple opertions into a storage
+func (db Db) AddOperations(portfolioID string, ops []models.Operation) ([]string, error) {
 	pid, err := db.findPortfolio(portfolioID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if pid.IsZero() {
-		return fmt.Errorf("No portfolio found with %s Id", portfolioID)
+		return nil, fmt.Errorf("No portfolio found with %s Id", portfolioID)
 	}
 
 	docs := make([]interface{}, len(ops))
@@ -91,11 +95,17 @@ func (db Db) SaveMultipleOperations(portfolioID string, ops []models.Operation) 
 
 	ctx := db.context()
 	opts := options.InsertMany()
-	_, err = db.operations.InsertMany(ctx, docs, opts)
+	res, err := db.operations.InsertMany(ctx, docs, opts)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	ids := make([]string, len(res.InsertedIDs))
+	for i, id := range res.InsertedIDs {
+		ids[i] = id.(primitive.ObjectID).Hex()
+	}
+
+	return ids, nil
 }
 
 // GetOperations finds operations depending on input prameters
@@ -108,7 +118,7 @@ func (db Db) GetOperations(portfolioID string, key string, value string, from st
 	filter := bson.M{"pid": pid}
 	and := []interface{}{}
 	hasParams := false
-	if key != "" {
+	if key != "" && value != "" {
 		and = append(and, bson.M{key: value})
 		hasParams = true
 	}
@@ -178,7 +188,6 @@ func (db Db) getOperations(filter primitive.M, findOptions *options.FindOptions)
 		DateTime      time.Time `bson:"time"`
 		OperationType string    `bson:"type"`
 	}
-	fmt.Println(rawOps)
 
 	cur.All(ctx, &rawOps)
 

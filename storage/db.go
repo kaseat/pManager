@@ -10,24 +10,28 @@ import (
 // Db represents data storage
 type Db interface {
 	AddUser(login, email, hash string) (string, error)
-	UpdateUser(login string, user models.User) (bool, error)
 	GetUserByLogin(login string) (models.User, error)
 	GetUserPassword(login string) (string, error)
+	UpdateUser(login string, user models.User) (bool, error)
 	UpdateUserPassword(login, hash string) (bool, error)
 	DeleteUser(login string) (bool, error)
 
 	AddPortfolio(userID string, p models.Portfolio) (string, error)
 	GetPortfolio(userID string, portfolioID string) (models.Portfolio, error)
-	GetAllPortfolios(userID string) ([]models.Portfolio, error)
+	GetPortfolios(userID string) ([]models.Portfolio, error)
 	UpdatePortfolio(userID string, portfolioID string, p models.Portfolio) (bool, error)
-	RemovePortfolio(userID string, portfolioID string) (bool, error)
-	RemoveAllPortfolios(userID string) (int64, error)
+	DeletePortfolio(userID string, portfolioID string) (bool, error)
+	DeletePortfolios(userID string) (int64, error)
 
-	SaveLastUpdateTime(provider string, date time.Time) error
+	AddLastUpdateTime(provider string, date time.Time) error
 	GetLastUpdateTime(provider string) (time.Time, error)
-	SaveSingleOperation(portfolioID string, op models.Operation) error
-	SaveMultipleOperations(portfolioID string, ops []models.Operation) error
+	DeleteLastUpdateTime(provider string) error
+
+	AddOperation(portfolioID string, op models.Operation) (string, error)
+	AddOperations(portfolioID string, ops []models.Operation) ([]string, error)
 	GetOperations(portfolioID string, key string, value string, from string, to string) ([]models.Operation, error)
+	DeleteOperation(portfolioID string, operationID string) (bool, error)
+	DeleteOperations(portfolioID string) (int64, error)
 }
 
 var db mongo.Db

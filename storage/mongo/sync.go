@@ -8,8 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// SaveLastUpdateTime saves last date when specified provider made sync
-func (db Db) SaveLastUpdateTime(provider string, date time.Time) error {
+// AddLastUpdateTime saves last date when specified provider made sync
+func (db Db) AddLastUpdateTime(provider string, date time.Time) error {
 	ctx := db.context()
 	filter := bson.M{"provider": provider}
 	update := bson.M{"$set": bson.M{"date": date}}
@@ -22,8 +22,8 @@ func (db Db) SaveLastUpdateTime(provider string, date time.Time) error {
 	return nil
 }
 
-// ClearLastUpdateTime removes last date when specified provider made sync
-func (db Db) ClearLastUpdateTime(provider string) error {
+// DeleteLastUpdateTime removes last date when specified provider made sync
+func (db Db) DeleteLastUpdateTime(provider string) error {
 	ctx := db.context()
 	filter := bson.M{"provider": provider}
 	opts := options.Delete()

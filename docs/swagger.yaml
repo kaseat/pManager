@@ -30,17 +30,23 @@ definitions:
         example: USD
         type: string
       date:
-        example: "2020-06-06T22:54:05.000+07:00"
+        example: "2020-06-06T15:54:05Z"
         type: string
       figi:
         example: BBG00MVRXDB0
         type: string
-      operationType:
-        example: sell
+      isin:
+        example: US9229083632
         type: string
       price:
         example: 293.61
         type: number
+      ticker:
+        example: VOO
+        type: string
+      type:
+        example: sell
+        type: string
       vol:
         example: 100
         type: integer
@@ -67,19 +73,7 @@ definitions:
       token:
         type: string
     type: object
-  models.Portfolio:
-    properties:
-      description:
-        example: Best portfolio ever!!!
-        type: string
-      id:
-        example: 5edb2a0e550dfc5f16392838
-        type: string
-      name:
-        example: Best portfolio
-        type: string
-    type: object
-  portfolio.Operation:
+  models.Operation:
     properties:
       currency:
         example: USD
@@ -93,17 +87,35 @@ definitions:
       id:
         example: 5edbc0a72c857652a0542fab
         type: string
-      operationType:
-        example: sell
+      isin:
+        example: US9229083632
         type: string
       pid:
         type: string
       price:
         example: 293.61
         type: number
+      ticker:
+        example: VOO
+        type: string
+      type:
+        example: sell
+        type: string
       vol:
         example: 100
         type: integer
+    type: object
+  models.Portfolio:
+    properties:
+      description:
+        example: Best portfolio ever!!!
+        type: string
+      id:
+        example: 5edb2a0e550dfc5f16392838
+        type: string
+      name:
+        example: Best portfolio
+        type: string
     type: object
 host: localhost
 info:
@@ -320,7 +332,7 @@ paths:
           description: Returns operations info
           schema:
             items:
-              $ref: '#/definitions/portfolio.Operation'
+              $ref: '#/definitions/models.Operation'
             type: array
         "400":
           description: Returns when any processing error occurs
@@ -335,7 +347,6 @@ paths:
       summary: Get all operations
       tags:
       - operations
-      - portfolios
     post:
       consumes:
       - application/json
@@ -373,7 +384,6 @@ paths:
       summary: Add new operation
       tags:
       - operations
-      - portfolios
   /token/validate:
     get:
       description: get string by ID

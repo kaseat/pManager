@@ -154,12 +154,12 @@ func TestPortfolioDeletion(t *testing.T) {
 	ops2 := getOperations(getTime())
 	ops3 := getOperations(getTime())
 
-	db.SaveMultipleOperations(p1, ops1)
-	db.SaveMultipleOperations(p2, ops2)
-	db.SaveMultipleOperations(p3, ops3)
+	db.AddOperations(p1, ops1)
+	db.AddOperations(p2, ops2)
+	db.AddOperations(p3, ops3)
 
 	//
-	resBool, err := db.RemovePortfolio(u.Hex(), p1)
+	resBool, err := db.DeletePortfolio(u.Hex(), p1)
 	if err != nil {
 		t.Errorf("Fail! Could not remove test portfolio. Internal error: %s", err)
 	}
@@ -169,7 +169,7 @@ func TestPortfolioDeletion(t *testing.T) {
 		t.Errorf("Fail! Portfolio did not remove as it should! Expected %v, got %v", true, resBool)
 	}
 
-	resArr, err := db.GetAllPortfolios(u.Hex())
+	resArr, err := db.GetPortfolios(u.Hex())
 	if err != nil {
 		t.Errorf("Fail! Could not get test portfolio. Internal error: %s", err)
 	}
@@ -179,7 +179,7 @@ func TestPortfolioDeletion(t *testing.T) {
 		t.Errorf("Fail! Received number of portfolios not match! Expected %d, got %d", 2, len(resArr))
 	}
 
-	resInt, err := db.RemoveAllPortfolios(u.Hex())
+	resInt, err := db.DeletePortfolios(u.Hex())
 	if err != nil {
 		t.Errorf("Fail! Could not remove all test portfolios. Internal error: %s", err)
 	}
@@ -189,7 +189,7 @@ func TestPortfolioDeletion(t *testing.T) {
 		t.Errorf("Fail! All portfolios did not remove as it should! Expected %d, got %d", 2, resInt)
 	}
 
-	resArr, err = db.GetAllPortfolios(u.Hex())
+	resArr, err = db.GetPortfolios(u.Hex())
 	if err != nil {
 		t.Errorf("Fail! Could not get test portfolio. Internal error: %s", err)
 	}
@@ -206,9 +206,9 @@ func TestPortfolioDeletion(t *testing.T) {
 		t.Errorf("Fail! All portfolios did not remove as it should! Expected %d, got %d", 2, resInt)
 	}
 
-	// feed RemovePortfolio with malformed user Id
+	// feed DeletePortfolio with malformed user Id
 	malformedID := "ffff"
-	_, err = db.RemovePortfolio(malformedID, p1)
+	_, err = db.DeletePortfolio(malformedID, p1)
 	expectedErrMsg := fmt.Sprintf("Could not decode user Id (%s). Internal error : the provided hex string is not a valid ObjectID", malformedID)
 	if err == nil {
 		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
@@ -220,8 +220,8 @@ func TestPortfolioDeletion(t *testing.T) {
 		}
 	}
 
-	// feed RemovePortfolio with malformed portfolio Id
-	_, err = db.RemovePortfolio(u.Hex(), malformedID)
+	// feed DeletePortfolio with malformed portfolio Id
+	_, err = db.DeletePortfolio(u.Hex(), malformedID)
 	expectedErrMsg = fmt.Sprintf("Could not decode portfolio Id (%s). Internal error : the provided hex string is not a valid ObjectID", malformedID)
 	if err == nil {
 		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
@@ -233,8 +233,8 @@ func TestPortfolioDeletion(t *testing.T) {
 		}
 	}
 
-	// feed RemoveAllPortfolios with malformed user Id
-	resInt, err = db.RemoveAllPortfolios(malformedID)
+	// feed DeletePortfolios with malformed user Id
+	resInt, err = db.DeletePortfolios(malformedID)
 	if err == nil {
 		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
 	} else {
@@ -245,9 +245,9 @@ func TestPortfolioDeletion(t *testing.T) {
 		}
 	}
 
-	// feed RemovePortfolio with unknown user Id
+	// feed DeletePortfolio with unknown user Id
 	unknownID := "5edbc0a72c857652a0542fab"
-	resBool, err = db.RemovePortfolio(unknownID, p1)
+	resBool, err = db.DeletePortfolio(unknownID, p1)
 	if err != nil {
 		t.Errorf("Fail! Could not remove all portfolios. Internal error: %s", err)
 	}
@@ -257,8 +257,8 @@ func TestPortfolioDeletion(t *testing.T) {
 		t.Errorf("Fail! Portfolio removed, but it should not! Expected %v, got %v", false, resBool)
 	}
 
-	// feed RemoveAllPortfolios with unknown user Id
-	resInt, err = db.RemoveAllPortfolios(unknownID)
+	// feed DeletePortfolios with unknown user Id
+	resInt, err = db.DeletePortfolios(unknownID)
 	if err != nil {
 		t.Errorf("Fail! Could not remove all portfolios. Internal error: %s", err)
 	}
@@ -268,8 +268,8 @@ func TestPortfolioDeletion(t *testing.T) {
 		t.Errorf("Fail! Portfolio removed, but it should not! Expected %v, got %v", 0, resInt)
 	}
 
-	// feed RemovePortfolio with unknown portfolio Id
-	_, err = db.RemovePortfolio(u.Hex(), unknownID)
+	// feed DeletePortfolio with unknown portfolio Id
+	_, err = db.DeletePortfolio(u.Hex(), unknownID)
 	expectedErrMsg = "mongo: no documents in result"
 	if err != nil {
 		t.Errorf("Fail! Could not remove all portfolios. Internal error: %s", err)
@@ -333,7 +333,7 @@ func TestPortfolios(t *testing.T) {
 	}
 
 	// ensure we got all portfolios
-	resArr, err := db.GetAllPortfolios(u.Hex())
+	resArr, err := db.GetPortfolios(u.Hex())
 	if err != nil {
 		t.Errorf("Fail! Could not get test portfolio. Internal error: %s", err)
 	}
@@ -357,8 +357,8 @@ func TestPortfolios(t *testing.T) {
 		}
 	}
 
-	// feed GetAllPortfolios with malformed user Id
-	_, err = db.GetAllPortfolios(malformedID)
+	// feed GetPortfolios with malformed user Id
+	_, err = db.GetPortfolios(malformedID)
 	expectedErrMsg = fmt.Sprintf("Could not decode user Id (%s). Internal error : the provided hex string is not a valid ObjectID", malformedID)
 	if err == nil {
 		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
@@ -458,8 +458,8 @@ func TestPortfolios(t *testing.T) {
 		t.Errorf("Fail! Expected %v, got %v", false, resBool)
 	}
 
-	// feed GetAllPortfolios with unknown user Id
-	resArr, err = db.GetAllPortfolios(unknownID)
+	// feed GetPortfolios with unknown user Id
+	resArr, err = db.GetPortfolios(unknownID)
 	if err != nil {
 		t.Errorf("Fail! Could not get all portfolios. Internal error: %s", err)
 	}
@@ -506,7 +506,7 @@ func TestLastUpdateTimeStorage(t *testing.T) {
 	now, _ := time.Parse(time.RFC3339, "2020-05-13T22:08:41Z")
 
 	// ensure we can get back inserted lastUpdateTime
-	err := db.SaveLastUpdateTime(provider, now)
+	err := db.AddLastUpdateTime(provider, now)
 	if err != nil {
 		t.Errorf("Fail! Could not save '%s' provider. Internal error: %s", provider, err)
 	}
@@ -522,7 +522,7 @@ func TestLastUpdateTimeStorage(t *testing.T) {
 	}
 
 	// check if we actually deleted lastUpdateTime entry
-	err = db.ClearLastUpdateTime(provider)
+	err = db.DeleteLastUpdateTime(provider)
 	if err != nil {
 		t.Errorf("Fail! Could not delete '%s' provider. Internal error: %s", provider, err)
 	}
@@ -545,7 +545,7 @@ func TestMultipleOperations(t *testing.T) {
 	ops := getOperations(now)
 
 	// ensure we can insert multiple operations with no issues
-	err := db.SaveMultipleOperations(pid.Hex(), ops)
+	_, err := db.AddOperations(pid.Hex(), ops)
 	if err != nil {
 		t.Errorf("Unknown error: '%s'", err)
 	}
@@ -629,9 +629,9 @@ func TestMultipleOperations(t *testing.T) {
 		t.Logf("Success! Expected '1' got '%d'", len(res))
 	}
 
-	// feed SaveMultipleOperations with malformed portfolio Id
+	// feed AddOperations with malformed portfolio Id
 	malformedID := "ffff"
-	err = db.SaveMultipleOperations(malformedID, ops)
+	_, err = db.AddOperations(malformedID, ops)
 	expectedErrMsg := "the provided hex string is not a valid ObjectID"
 	if err == nil {
 		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
@@ -656,8 +656,8 @@ func TestMultipleOperations(t *testing.T) {
 		}
 	}
 
-	// feed RemoveAllOperations with malformed portfolio Id
-	_, err = db.RemoveSingleOperation(malformedID, res[0].OperationID)
+	// feed DeleteOperation with malformed portfolio Id
+	_, err = db.DeleteOperation(malformedID, res[0].OperationID)
 	expectedErrMsg = fmt.Sprintf("Could not decode portfolio Id (%s). Internal error : the provided hex string is not a valid ObjectID", malformedID)
 	if err == nil {
 		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
@@ -669,8 +669,8 @@ func TestMultipleOperations(t *testing.T) {
 		}
 	}
 
-	// feed RemoveAllOperations with malformed operation Id
-	_, err = db.RemoveSingleOperation(pid.Hex(), malformedID)
+	// feed DeleteOperation with malformed operation Id
+	_, err = db.DeleteOperation(pid.Hex(), malformedID)
 	expectedErrMsg = fmt.Sprintf("Could not decode operation Id (%s). Internal error : the provided hex string is not a valid ObjectID", malformedID)
 	if err == nil {
 		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
@@ -682,8 +682,8 @@ func TestMultipleOperations(t *testing.T) {
 		}
 	}
 
-	// feed RemoveAllOperations with malformed portfolio Id
-	_, err = db.RemoveAllOperations(malformedID)
+	// feed DeleteOperations with malformed portfolio Id
+	_, err = db.DeleteOperations(malformedID)
 	expectedErrMsg = fmt.Sprintf("Could not decode portfolio Id (%s). Internal error : the provided hex string is not a valid ObjectID", malformedID)
 	if err == nil {
 		t.Errorf("Fail! Expected '%s' error", expectedErrMsg)
@@ -695,9 +695,9 @@ func TestMultipleOperations(t *testing.T) {
 		}
 	}
 
-	// feed SaveMultipleOperations with unknwn portfolio Id
+	// feed AddOperations with unknwn portfolio Id
 	unknownID := "5edbc0a72c857652a0542fab"
-	err = db.SaveMultipleOperations(unknownID, ops)
+	_, err = db.AddOperations(unknownID, ops)
 	expectedErrMsg = fmt.Sprintf("No portfolio found with %s Id", unknownID)
 	if err == nil {
 		t.Errorf("Fail! Expected '%s'", expectedErrMsg)
@@ -710,7 +710,7 @@ func TestMultipleOperations(t *testing.T) {
 	}
 
 	// throws no error when provided pid is not found
-	resInt, err := db.RemoveAllOperations(unknownID)
+	resInt, err := db.DeleteOperations(unknownID)
 	if err != nil {
 		t.Errorf("Fail! Unknown error: '%s'", err)
 	}
@@ -721,7 +721,7 @@ func TestMultipleOperations(t *testing.T) {
 	}
 
 	// throws no error when provided pid is not found
-	resBool, err := db.RemoveSingleOperation(unknownID, res[0].OperationID)
+	resBool, err := db.DeleteOperation(unknownID, res[0].OperationID)
 	if err != nil {
 		t.Errorf("Fail! Unknown error: '%s'", err)
 	}
@@ -732,7 +732,7 @@ func TestMultipleOperations(t *testing.T) {
 	}
 
 	// throws no error when provided oid is not found
-	resBool, err = db.RemoveSingleOperation(pid.Hex(), unknownID)
+	resBool, err = db.DeleteOperation(pid.Hex(), unknownID)
 	if err != nil {
 		t.Errorf("Fail! Unknown error: '%s'", err)
 	}
@@ -756,7 +756,7 @@ func TestMultipleOperations(t *testing.T) {
 	}
 
 	// ensure we successfully removed operation with provided Id
-	resBool, err = db.RemoveSingleOperation(pid.Hex(), remOp)
+	resBool, err = db.DeleteOperation(pid.Hex(), remOp)
 	if err != nil {
 		t.Errorf("Fail! Unknown error: '%s'", err)
 	}
@@ -778,7 +778,7 @@ func TestMultipleOperations(t *testing.T) {
 	}
 
 	// ensure we successfully removed all operations
-	resInt, err = db.RemoveAllOperations(pid.Hex())
+	resInt, err = db.DeleteOperations(pid.Hex())
 	if err != nil {
 		t.Errorf("Fail! Unknown error: '%s'", err)
 	}
@@ -809,7 +809,7 @@ func TestSaveSingleOperation(t *testing.T) {
 	ops := getOperations(now)
 
 	// ensure we can get back inserted operation
-	err := db.SaveSingleOperation(pid.Hex(), ops[0])
+	_, err := db.AddOperation(pid.Hex(), ops[0])
 	if err != nil {
 		t.Errorf("Fail! Unknown error: '%s'", err)
 	}

@@ -118,7 +118,7 @@ func ReadAllPortfolios(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ps, err := s.GetAllPortfolios(u.UserID)
+	ps, err := s.GetPortfolios(u.UserID)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -201,7 +201,7 @@ func DeleteSinglePortfolio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deleted, err := s.RemovePortfolio(u.UserID, id)
+	deleted, err := s.DeletePortfolio(u.UserID, id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -233,7 +233,7 @@ func DeleteAllPortfolios(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	num, err := s.RemoveAllPortfolios(u.UserID)
+	num, err := s.DeletePortfolios(u.UserID)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return

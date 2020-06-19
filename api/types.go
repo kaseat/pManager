@@ -33,8 +33,10 @@ type operationRequest struct {
 	Price         float64 `json:"price" example:"293.61"`
 	Volume        int64   `json:"vol" example:"100"`
 	FIGI          string  `json:"figi" example:"BBG00MVRXDB0"`
-	DateTime      string  `json:"date" example:"2020-06-06T22:54:05.000+07:00"`
-	OperationType string  `json:"operationType" example:"sell"`
+	ISIN          string  `json:"isin" example:"US9229083632"`
+	Ticker        string  `json:"ticker" example:"VOO"`
+	DateTime      string  `json:"date" example:"2020-06-06T15:54:05Z"`
+	OperationType string  `json:"type" example:"sell"`
 }
 
 type errorResponse struct {

@@ -6,7 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/portfolio"
+	"github.com/kaseat/pManager/storage"
 )
 
 // CreateSingleOperation creates single operation
@@ -20,51 +22,57 @@ import (
 // @success 200 {object} addOperationSuccess "Returns portfolio Id just created"
 // @failure 400 {object} errorResponse "Returns when any processing error occurs"
 // @failure 401 {object} errorResponse "Returns when authentication error occurs"
-// @tags operations,portfolios
+// @tags operations
 // @security ApiKeyAuth
 // @router /portfolios/{id}/operations [post]
 func CreateSingleOperation(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	id := mux.Vars(r)["id"]
+	pid := mux.Vars(r)["id"]
 	user := r.Header.Get("user")
 
-	found, o, err := portfolio.GetOwnerByLogin(user)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
-		return
-	}
-
-	found, p, err := o.GetPortfolio(id)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No portfolio found with Id: ", id))
-		return
-	}
-
 	decoder := json.NewDecoder(r.Body)
-	var op portfolio.Operation
+	var op models.Operation
 
-	err = decoder.Decode(&op)
+	err := decoder.Decode(&op)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	opID, err := p.AddOperation(op)
+	s := storage.GetStorage()
+	u, err := s.GetUserByLogin(user)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	writeOk(w, addOperationSuccess{OperationID: opID})
+	ps, err := s.GetPortfolios(u.UserID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	canEdit := false
+	for _, p := range ps {
+		if p.PortfolioID == pid {
+			canEdit = true
+			break
+		}
+	}
+
+	if !canEdit {
+		writeError(w, http.StatusUnauthorized, "You cannot modify this portfolio")
+		return
+	}
+
+	oid, err := s.AddOperation(pid, op)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeOk(w, addOperationSuccess{OperationID: oid})
 }
 
 // ReadOperations gets all operations of specified portfolio
@@ -76,49 +84,49 @@ func CreateSingleOperation(w http.ResponseWriter, r *http.Request) {
 // @param figi query string false "Filter by FIGI"
 // @param from query string false "Filter operations from this date"
 // @param to query string false "Filter operations till this date"
-// @success 200 {array} portfolio.Operation "Returns operations info"
+// @success 200 {array} models.Operation "Returns operations info"
 // @failure 400 {object} errorResponse "Returns when any processing error occurs"
 // @failure 401 {object} errorResponse "Returns when authentication error occurs"
-// @tags operations,portfolios
+// @tags operations
 // @security ApiKeyAuth
 // @router /portfolios/{id}/operations [get]
 func ReadOperations(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	id := mux.Vars(r)["id"]
+	pid := mux.Vars(r)["id"]
 	user := r.Header.Get("user")
 
-	found, o, err := portfolio.GetOwnerByLogin(user)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
-		return
-	}
-
-	found, p, err := o.GetPortfolio(id)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No portfolio found with Id: ", id))
-		return
-	}
-
-	ops, err := p.GetOperations(r.FormValue("figi"), r.FormValue("from"), r.FormValue("to"))
+	s := storage.GetStorage()
+	u, err := s.GetUserByLogin(user)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	for i := range ops {
-		ops[i].PortfolioID = ""
-		ops[i].PriceF = float64(ops[i].Price) / 1e6
+	ps, err := s.GetPortfolios(u.UserID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
+	canRead := false
+	for _, p := range ps {
+		if p.PortfolioID == pid {
+			canRead = true
+			break
+		}
+	}
+
+	if !canRead {
+		writeError(w, http.StatusUnauthorized, "You cannot read operations for this portfolio")
+		return
+	}
+
+	ops, err := s.GetOperations(pid, "figi", r.FormValue("figi"), r.FormValue("from"), r.FormValue("to"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	writeOk(w, ops)
 }
 
