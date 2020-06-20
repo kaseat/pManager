@@ -411,6 +411,54 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Deletes all operations for given portfolio",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "operations"
+                ],
+                "summary": "Delete all operations",
+                "operationId": "operation-del-all",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Portfolio Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns number of deleted items",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.delMutileSuccess"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Returns when any processing error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Returns when authentication error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
             }
         },
         "/token/validate": {
@@ -554,6 +602,15 @@
                 "createdPortfolioId": {
                     "type": "string",
                     "example": "5edb2a0e550dfc5f16392838"
+                }
+            }
+        },
+        "api.delMutileSuccess": {
+            "type": "object",
+            "properties": {
+                "DeletedItems": {
+                    "type": "integer",
+                    "example": 42
                 }
             }
         },

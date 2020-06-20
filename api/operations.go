@@ -2,12 +2,10 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/kaseat/pManager/models"
-	"github.com/kaseat/pManager/portfolio"
 	"github.com/kaseat/pManager/storage"
 )
 
@@ -130,41 +128,55 @@ func ReadOperations(w http.ResponseWriter, r *http.Request) {
 	writeOk(w, ops)
 }
 
-// DeleteAllOperations removes all operations of specified portfolio
+// DeleteAllOperations removes all operations of given portfolio
+// @summary Delete all operations
+// @description Deletes all operations for given portfolio
+// @id operation-del-all
+// @produce json
+// @param id path string true "Portfolio Id"
+// @success 200 {array} delMutileSuccess "Returns number of deleted items"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags operations
+// @security ApiKeyAuth
+// @router /portfolios/{id}/operations [delete]
 func DeleteAllOperations(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	id := mux.Vars(r)["id"]
+	pid := mux.Vars(r)["id"]
 	user := r.Header.Get("user")
 
-	found, o, err := portfolio.GetOwnerByLogin(user)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
-		return
-	}
-
-	found, p, err := o.GetPortfolio(id)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No portfolio found with Id: ", id))
-		return
-	}
-
-	numDeleted, err := p.DeleteAllOperations()
+	s := storage.GetStorage()
+	u, err := s.GetUserByLogin(user)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	writeOk(w, struct {
-		Status     responseStatus `json:"status"`
-		NumDeleted int64          `json:"numDeleted"`
-	}{Status: ok, NumDeleted: numDeleted})
+	ps, err := s.GetPortfolios(u.UserID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	canDel := false
+	for _, p := range ps {
+		if p.PortfolioID == pid {
+			canDel = true
+			break
+		}
+	}
+
+	if !canDel {
+		writeError(w, http.StatusUnauthorized, "You cannot delete operations from this portfolio")
+		return
+	}
+
+	num, err := s.DeleteOperations(pid)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeOk(w, delMutileSuccess{DeletedItems: num})
 }

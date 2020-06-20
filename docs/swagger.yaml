@@ -12,6 +12,12 @@ definitions:
         example: 5edb2a0e550dfc5f16392838
         type: string
     type: object
+  api.delMutileSuccess:
+    properties:
+      DeletedItems:
+        example: 42
+        type: integer
+    type: object
   api.delPortfoliioSuccess:
     properties:
       hasDeleted:
@@ -304,6 +310,37 @@ paths:
       tags:
       - portfolios
   /portfolios/{id}/operations:
+    delete:
+      description: Deletes all operations for given portfolio
+      operationId: operation-del-all
+      parameters:
+      - description: Portfolio Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns number of deleted items
+          schema:
+            items:
+              $ref: '#/definitions/api.delMutileSuccess'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete all operations
+      tags:
+      - operations
     get:
       description: Gets all operations for specified portfolio
       operationId: operation-get-all
