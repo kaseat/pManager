@@ -288,6 +288,63 @@
                 }
             }
         },
+        "/portfolios/{id}/balance": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Gets balance of given currency",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "misc"
+                ],
+                "summary": "Get all operations",
+                "operationId": "get-balance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Portfolio Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Currency",
+                        "name": "currency",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns balance of given currency",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.getBalanceSuccess"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Returns when any processing error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Returns when authentication error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/portfolios/{id}/operations": {
             "get": {
                 "security": [
@@ -629,6 +686,15 @@
                 "error": {
                     "type": "string",
                     "example": "Something went wrong"
+                }
+            }
+        },
+        "api.getBalanceSuccess": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "number",
+                    "example": 42
                 }
             }
         },

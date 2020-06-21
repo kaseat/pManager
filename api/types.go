@@ -27,6 +27,10 @@ type delMutileSuccess struct {
 	DeletedItems int64 `json:"DeletedItems" example:"42"`
 }
 
+type getBalanceSuccess struct {
+	Balance float64 `json:"balance" example:"42"`
+}
+
 type portfolioRequest struct {
 	Name        string `json:"name" example:"Best portfolio"`
 	Description string `json:"description" example:"Best portfolio ever!!!"`
