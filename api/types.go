@@ -31,6 +31,10 @@ type getBalanceSuccess struct {
 	Balance float64 `json:"balance" example:"42"`
 }
 
+type getAverageSuccess struct {
+	Average float64 `json:"avg" example:"42"`
+}
+
 type portfolioRequest struct {
 	Name        string `json:"name" example:"Best portfolio"`
 	Description string `json:"description" example:"Best portfolio ever!!!"`

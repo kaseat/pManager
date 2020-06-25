@@ -30,6 +30,12 @@ definitions:
         example: Something went wrong
         type: string
     type: object
+  api.getAverageSuccess:
+    properties:
+      avg:
+        example: 42
+        type: number
+    type: object
   api.getBalanceSuccess:
     properties:
       balance:
@@ -315,6 +321,43 @@ paths:
       summary: Update portfolio info
       tags:
       - portfolios
+  /portfolios/{id}/average:
+    get:
+      description: Gets average price of given ticker
+      operationId: get-average
+      parameters:
+      - description: Portfolio Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ticker
+        in: query
+        name: ticker
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns average price of given ticker
+          schema:
+            items:
+              $ref: '#/definitions/api.getAverageSuccess'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get average
+      tags:
+      - misc
   /portfolios/{id}/balance:
     get:
       description: Gets balance of given currency
@@ -349,7 +392,7 @@ paths:
             $ref: '#/definitions/api.errorResponse'
       security:
       - ApiKeyAuth: []
-      summary: Get all operations
+      summary: Get balance
       tags:
       - misc
   /portfolios/{id}/operations:

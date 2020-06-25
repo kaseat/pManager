@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kaseat/pManager/models"
@@ -12,61 +11,56 @@ import (
 	"github.com/kaseat/pManager/utils"
 )
 
-// GetAveragePrice returns averge price of specified figi
+// GetAveragePrice returns averge price of specified ticker
+// @summary Get average
+// @description Gets average price of given ticker
+// @id get-average
+// @produce json
+// @param id path string true "Portfolio Id"
+// @param ticker query string true "Ticker"
+// @success 200 {array} getAverageSuccess "Returns average price of given ticker"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags misc
+// @security ApiKeyAuth
+// @router /portfolios/{id}/average [get]
 func GetAveragePrice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	id := mux.Vars(r)["id"]
+	pid := mux.Vars(r)["id"]
 	user := r.Header.Get("user")
 
-	found, o, err := portfolio.GetOwnerByLogin(user)
+	s := storage.GetStorage()
+
+	canAccess, err := canAccess(s, user, pid)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No user found with login: ", user))
+	if !canAccess {
+		writeError(w, http.StatusUnauthorized, "You cannot get operations from this portfolio")
 		return
 	}
 
-	found, p, err := o.GetPortfolio(id)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	if !found {
-		writeError(w, http.StatusNotFound, fmt.Sprint("No portfolio found with Id: ", id))
-		return
-	}
-	figi := r.FormValue("figi")
-	if figi == "" {
-		writeError(w, http.StatusBadRequest, fmt.Sprint(`You must provide "figi" parameter`))
+	ticker := r.FormValue("ticker")
+	if ticker == "" {
+		writeError(w, http.StatusBadRequest, fmt.Sprint(`You must provide "ticker" parameter`))
 		return
 	}
 
-	var price int64
-	onDate, err := time.Parse("2006-01-02T15:04:05.000Z0700", r.FormValue("onDate"))
-	if err == nil {
-		price, err = p.GetAveragePriceByFigiTillDate(figi, onDate)
-	} else {
-		price, err = p.GetAveragePriceByFigi(figi)
-	}
+	ops, err := s.GetOperations(pid, "ticker", ticker, "", "")
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	writeOk(w, struct {
-		Status responseStatus
-		Price  float64
-	}{
-		Status: ok,
-		Price:  float64(price) / 1e6,
-	})
+	avg := utils.GetAverage(ops)
+
+	writeOk(w, getAverageSuccess{Average: avg})
 }
 
 // GetBalance returns balance of specified currency
-// @summary Get all operations
+// @summary Get balance
 // @description Gets balance of given currency
 // @id get-balance
 // @produce json
@@ -97,27 +91,13 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s := storage.GetStorage()
-	u, err := s.GetUserByLogin(user)
+
+	canAccess, err := canAccess(s, user, pid)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	ps, err := s.GetPortfolios(u.UserID)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	canDel := false
-	for _, p := range ps {
-		if p.PortfolioID == pid {
-			canDel = true
-			break
-		}
-	}
-
-	if !canDel {
+	if !canAccess {
 		writeError(w, http.StatusUnauthorized, "You cannot get operations from this portfolio")
 		return
 	}
