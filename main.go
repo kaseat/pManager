@@ -9,7 +9,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kaseat/pManager/api"
-	"github.com/kaseat/pManager/portfolio"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -23,11 +22,6 @@ import (
 // @in header
 // @name Authorization
 func main() {
-	cfg := portfolio.Config{
-		MongoURL: "mongodb://localhost:27017",
-		DbName:   "tcs2",
-	}
-	portfolio.Init(cfg)
 
 	fmt.Println("Started!")
 

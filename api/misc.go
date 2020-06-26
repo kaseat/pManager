@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kaseat/pManager/models"
-	"github.com/kaseat/pManager/portfolio"
 	"github.com/kaseat/pManager/storage"
 	"github.com/kaseat/pManager/utils"
 )
@@ -86,7 +85,7 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 
 	if !(curr == models.EUR || curr == models.RUB || curr == models.USD) {
 		writeError(w, http.StatusBadRequest, fmt.Sprintf("Unknown currency '%s'. Expected '%s', '%s' or '%s'",
-			curr, portfolio.EUR, portfolio.RUB, portfolio.USD))
+			curr, models.EUR, models.RUB, models.USD))
 		return
 	}
 

@@ -1,15 +1,17 @@
 package utils
 
 import (
+	"math"
+
 	"github.com/kaseat/pManager/models"
 	"github.com/oleiade/lane"
 )
 
 // GetSum returns blance for given operations
 func GetSum(operations []models.Operation) float64 {
-	sum := float64(0)
+	sum := int64(0)
 	for _, opertion := range operations {
-		amount := opertion.Price * float64(opertion.Volume)
+		amount := int64(opertion.Price*1e6) * opertion.Volume
 		switch opertion.OperationType {
 		case models.PayIn, models.Sell:
 			sum += amount
@@ -17,7 +19,7 @@ func GetSum(operations []models.Operation) float64 {
 			sum -= amount
 		}
 	}
-	return sum
+	return float64(sum) / 1e6
 }
 
 // GetAverage returns average price of given operations
@@ -55,7 +57,7 @@ func GetAverage(ops []models.Operation) float64 {
 
 	result := float64(0)
 	if vol != 0 {
-		result = cost / vol
+		result = math.Round(cost/vol*1e6) / 1e6
 	}
 	return result
 }
