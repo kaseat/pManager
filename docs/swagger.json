@@ -12,6 +12,47 @@
     "host": "localhost",
     "basePath": "/api",
     "paths": {
+        "/misc/gmail/url": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Gets url for GMail auth",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get GMail auth url",
+                "operationId": "get-gmail-url",
+                "responses": {
+                    "200": {
+                        "description": "Returns url for GMail auth",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.GmailAuthUrlSuccess"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Returns when any processing error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Returns when authentication error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/portfolios": {
             "get": {
                 "security": [
@@ -701,6 +742,15 @@
         }
     },
     "definitions": {
+        "api.GmailAuthUrlSuccess": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "example": "https://google.com"
+                }
+            }
+        },
         "api.addOperationSuccess": {
             "type": "object",
             "properties": {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/kaseat/pManager/gmail"
 	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/storage"
 	"github.com/kaseat/pManager/utils"
@@ -110,4 +111,48 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 	bal := utils.GetSum(ops)
 
 	writeOk(w, getBalanceSuccess{Balance: bal})
+}
+
+// AddGoogleAuth adds gmail support for import operations
+// @summary Get GMail auth url
+// @description Gets url for GMail auth
+// @id get-gmail-url
+// @produce json
+// @success 200 {array} GmailAuthUrlSuccess "Returns url for GMail auth"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags user
+// @security ApiKeyAuth
+// @router /misc/gmail/url [get]
+func AddGoogleAuth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	user := r.Header.Get("user")
+
+	cl := gmail.GetClient()
+	url, err := cl.GetAuthURL(user)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeOk(w, GmailAuthUrlSuccess{URL: url})
+}
+
+// AppCallback saves respose from gmail
+func AppCallback(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	state := r.URL.Query().Get("state")
+	code := r.URL.Query().Get("code")
+
+	cl := gmail.GetClient()
+	err := cl.HandleResponse(state, code)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeOk(w, struct {
+		Status string `json:"status"`
+	}{Status: "ok"})
 }

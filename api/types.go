@@ -27,6 +27,10 @@ type delMutileSuccess struct {
 	DeletedItems int64 `json:"DeletedItems" example:"42"`
 }
 
+type GmailAuthUrlSuccess struct {
+	URL string `json:"url" example:"https://google.com"`
+}
+
 type getBalanceSuccess struct {
 	Balance float64 `json:"balance" example:"42"`
 }

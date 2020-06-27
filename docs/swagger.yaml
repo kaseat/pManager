@@ -1,5 +1,11 @@
 basePath: /api
 definitions:
+  api.GmailAuthUrlSuccess:
+    properties:
+      url:
+        example: https://google.com
+        type: string
+    type: object
   api.addOperationSuccess:
     properties:
       createdOperationId:
@@ -144,6 +150,32 @@ info:
   title: Portfolio manager API
   version: "1.0"
 paths:
+  /misc/gmail/url:
+    get:
+      description: Gets url for GMail auth
+      operationId: get-gmail-url
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns url for GMail auth
+          schema:
+            items:
+              $ref: '#/definitions/api.GmailAuthUrlSuccess'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get GMail auth url
+      tags:
+      - user
   /portfolios:
     delete:
       description: Deletes all portfolios an all associated operations

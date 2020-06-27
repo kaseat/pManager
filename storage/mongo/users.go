@@ -2,12 +2,14 @@ package mongo
 
 import (
 	"errors"
+	"time"
 
 	"github.com/kaseat/pManager/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/oauth2"
 )
 
 // AddUser saves user and password hash to storage
@@ -52,6 +54,97 @@ func (db Db) UpdateUser(login string, user models.User) (bool, error) {
 		return false, err
 	}
 	return res.ModifiedCount == 1, nil
+}
+
+// AddUserToken adds oauth2 token to user
+func (db Db) AddUserToken(state string, token *oauth2.Token) error {
+
+	doc := bson.M{
+		"access_token":  token.AccessToken,
+		"token_type":    token.TokenType,
+		"refresh_token": token.RefreshToken,
+		"expiry":        token.Expiry.Format(time.RFC3339Nano),
+	}
+
+	filter := bson.M{"state": state}
+	update := bson.M{"$set": bson.M{"token": doc}}
+	ctx := db.context()
+
+	res := db.users.FindOneAndUpdate(ctx, filter, update)
+	if res.Err() != nil {
+		return res.Err()
+	}
+	return nil
+}
+
+// GetUserToken gets user's oauth2 token
+func (db Db) GetUserToken(login string) (oauth2.Token, error) {
+
+	filter := bson.M{"login": login}
+	opts := options.FindOne()
+	ctx := db.context()
+
+	res := db.users.FindOne(ctx, filter, opts)
+	if res.Err() != nil {
+		return oauth2.Token{}, res.Err()
+	}
+
+	var data struct {
+		Token token `bson:"token"`
+	}
+
+	err := res.Decode(&data)
+	if err != nil {
+		return oauth2.Token{}, err
+	}
+
+	t, _ := time.Parse(time.RFC3339Nano, data.Token.Expiry)
+	tok := oauth2.Token{
+		AccessToken:  data.Token.AccessToken,
+		TokenType:    data.Token.TokenType,
+		RefreshToken: data.Token.RefreshToken,
+		Expiry:       t,
+	}
+
+	return tok, nil
+}
+
+// AddUserState adds state to user
+func (db Db) AddUserState(login string, state string) error {
+
+	filter := bson.M{"login": login}
+	update := bson.M{"$set": bson.M{"state": state}}
+	ctx := db.context()
+
+	res := db.users.FindOneAndUpdate(ctx, filter, update)
+	if res.Err() != nil {
+		return res.Err()
+	}
+	return nil
+}
+
+// GetUserState gets user's state
+func (db Db) GetUserState(login string) (string, error) {
+
+	filter := bson.M{"login": login}
+	opts := options.FindOne()
+	ctx := db.context()
+
+	res := db.users.FindOne(ctx, filter, opts)
+	if res.Err() != nil {
+		return "", res.Err()
+	}
+
+	var data struct {
+		State string `bson:"state"`
+	}
+
+	err := res.Decode(&data)
+	if err != nil {
+		return "", err
+	}
+
+	return data.State, nil
 }
 
 // GetUserByLogin gets user by login

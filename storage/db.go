@@ -5,12 +5,17 @@ import (
 
 	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/storage/mongo"
+	"golang.org/x/oauth2"
 )
 
 // Db represents data storage
 type Db interface {
 	AddUser(login, email, hash string) (string, error)
 	GetUserByLogin(login string) (models.User, error)
+	AddUserState(login string, state string) error
+	GetUserState(login string) (string, error)
+	AddUserToken(state string, token *oauth2.Token) error
+	GetUserToken(login string) (oauth2.Token, error)
 	GetUserPassword(login string) (string, error)
 	UpdateUser(login string, user models.User) (bool, error)
 	UpdateUserPassword(login, hash string) (bool, error)

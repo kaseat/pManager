@@ -76,7 +76,7 @@ func Sberbank() error {
 		if err != nil {
 			return err
 		}
-		b, err := decodeBase64Url(att.Data)
+		b, err := base64.URLEncoding.DecodeString(att.Data)
 		if err != nil {
 			return err
 		}
@@ -117,20 +117,6 @@ func getGmailService() (*gmail.Service, error) {
 		return nil, err
 	}
 	return srv, nil
-}
-
-func decodeBase64Url(data string) ([]byte, error) {
-	data = strings.Replace(data, "-", "+", -1)
-	data = strings.Replace(data, "_", "/", -1)
-
-	switch len(data) % 4 {
-	case 2:
-		data += "=="
-	case 3:
-		data += "="
-	}
-
-	return base64.StdEncoding.DecodeString(data)
 }
 
 func parseFloat(str string) float64 {

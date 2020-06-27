@@ -22,3 +22,10 @@ type Db struct {
 	users      *mongo.Collection
 	context    dbContext
 }
+
+type token struct {
+	AccessToken  string `bson:"access_token"`
+	TokenType    string `bson:"token_type,omitempty"`
+	RefreshToken string `bson:"refresh_token,omitempty"`
+	Expiry       string `bson:"expiry,omitempty"`
+}

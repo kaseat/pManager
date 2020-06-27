@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/oauth2"
 )
 
 var db Db
@@ -48,6 +49,52 @@ func TestUsers(t *testing.T) {
 		t.Logf("Success! Expected %v, got %v", uid, user.UserID)
 	} else {
 		t.Errorf("Fail! Saved and fetched user Ids not match! Expected %v, got %v", uid, user.UserID)
+	}
+
+	state := "state"
+	err = db.AddUserState(login, state)
+	if err != nil {
+		t.Errorf("Fail! Could not add user state. Internal error: %s", err)
+	}
+	st, err := db.GetUserState(login)
+	if err != nil {
+		t.Errorf("Fail! Could not get user's state. Internal error: %s", err)
+	}
+	if state == st {
+		t.Logf("Success! Expected %v, got %v", state, st)
+	} else {
+		t.Errorf("Fail! Saved and fetched user states not match! Expected %v, got %v", state, st)
+	}
+
+	exp := oauth2.Token{}
+	tok, err := db.GetUserToken(login)
+	if err != nil {
+		t.Errorf("Fail! Could not get user's token. Internal error: %s", err)
+	}
+	if tok == exp {
+		t.Logf("Success! Expected %v, got %v", exp, tok)
+	} else {
+		t.Errorf("Fail! Saved and fetched user tokens not match! Expected %v, got %v", exp, tok)
+	}
+
+	token := oauth2.Token{
+		AccessToken:  "access_token",
+		TokenType:    "Bearer",
+		RefreshToken: "refresh_token",
+		Expiry:       time.Now().Round(5),
+	}
+	err = db.AddUserToken(state, &token)
+	if err != nil {
+		t.Errorf("Fail! Could not add user token. Internal error: %s", err)
+	}
+	tok, err = db.GetUserToken(login)
+	if err != nil {
+		t.Errorf("Fail! Could not get user's token. Internal error: %s", err)
+	}
+	if token == tok {
+		t.Logf("Success! Expected %v, got %v", token, tok)
+	} else {
+		t.Errorf("Fail! Saved and fetched user tokens not match! Expected %v, got %v", token, tok)
 	}
 
 	_, err = db.AddUser(login, "", hash)

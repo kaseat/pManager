@@ -34,9 +34,11 @@ func main() {
 		httpSwagger.DomID("#swagger-ui"),
 	))
 
-	tokens := router.PathPrefix("/api/token").Subrouter().StrictSlash(true)
-	tokens.Use(api.VerifyTokenMiddleware)
-	tokens.HandleFunc("/validate", api.ValidateToken).Methods("GET")
+	misc := router.PathPrefix("/api/misc").Subrouter().StrictSlash(true)
+	misc.Use(api.VerifyTokenMiddleware)
+	misc.HandleFunc("/validate", api.ValidateToken).Methods("GET")
+	misc.HandleFunc("/gmail/url", api.AddGoogleAuth).Methods("GET")
+
 	portfolios := router.PathPrefix("/api/portfolios").Subrouter().StrictSlash(true)
 	portfolios.Use(api.VerifyTokenMiddleware)
 	portfolios.HandleFunc("", api.CreateSinglePortfolio).Methods("POST")
@@ -52,5 +54,6 @@ func main() {
 	portfolios.HandleFunc("/{id}/balance", api.GetBalance).Methods("GET")
 	router.HandleFunc("/api/user/login", api.Login).Methods("POST")
 	router.HandleFunc("/api/user/signup", api.SignUp).Methods("POST")
+	router.HandleFunc("/api/google/callback", api.AppCallback).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8081", router))
 }
