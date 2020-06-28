@@ -28,9 +28,9 @@ type Db interface {
 	DeletePortfolio(userID string, portfolioID string) (bool, error)
 	DeletePortfolios(userID string) (int64, error)
 
-	AddLastUpdateTime(provider string, date time.Time) error
-	GetLastUpdateTime(provider string) (time.Time, error)
-	DeleteLastUpdateTime(provider string) error
+	AddUserLastUpdateTime(login string, provider string, date time.Time) error
+	GetUserLastUpdateTime(login string, provider string) (time.Time, error)
+	DeleteUserLastUpdateTime(login string, provider string) error
 
 	AddOperation(portfolioID string, op models.Operation) (string, error)
 	AddOperations(portfolioID string, ops []models.Operation) ([]string, error)

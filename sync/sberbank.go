@@ -15,6 +15,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/kaseat/pManager/storage"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
@@ -40,14 +41,15 @@ type securitiesInfo struct {
 	IsBond bool
 }
 
-// Sberbank synk sber
+// Sberbank sync sber
 func Sberbank() error {
 	srv, err := getGmailService()
 	if err != nil {
 		return err
 	}
 
-	t, err := db.GetLastUpdateTime("sberbank")
+	s := storage.GetStorage()
+	t, err := s.GetUserLastUpdateTime("", "sberbank")
 	if err != nil {
 		return err
 	}

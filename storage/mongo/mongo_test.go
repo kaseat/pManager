@@ -187,7 +187,7 @@ func TestUsers(t *testing.T) {
 
 func TestPortfolioDeletion(t *testing.T) {
 	// arrange
-	u := addTestUser()
+	u := addTestUser("test_1")
 	p := models.Portfolio{
 		Name:        "name",
 		Description: "description",
@@ -331,7 +331,7 @@ func TestPortfolioDeletion(t *testing.T) {
 
 func TestPortfolios(t *testing.T) {
 	// arrange
-	u := addTestUser()
+	u := addTestUser("test_2")
 	p := models.Portfolio{
 		Name:        "name",
 		Description: "description",
@@ -551,14 +551,16 @@ func TestLastUpdateTimeStorage(t *testing.T) {
 	// arrange
 	provider := "test"
 	now, _ := time.Parse(time.RFC3339, "2020-05-13T22:08:41Z")
+	login := "test_login"
+	u := addTestUser(login)
 
 	// ensure we can get back inserted lastUpdateTime
-	err := db.AddLastUpdateTime(provider, now)
+	err := db.AddUserLastUpdateTime(login, provider, now)
 	if err != nil {
 		t.Errorf("Fail! Could not save '%s' provider. Internal error: %s", provider, err)
 	}
 
-	res, err := db.GetLastUpdateTime(provider)
+	res, err := db.GetUserLastUpdateTime(login, provider)
 	if err != nil {
 		t.Errorf("Fail! Could not fetch '%s' provider. Internal error: %s", provider, err)
 	}
@@ -569,12 +571,12 @@ func TestLastUpdateTimeStorage(t *testing.T) {
 	}
 
 	// check if we actually deleted lastUpdateTime entry
-	err = db.DeleteLastUpdateTime(provider)
+	err = db.DeleteUserLastUpdateTime(login, provider)
 	if err != nil {
 		t.Errorf("Fail! Could not delete '%s' provider. Internal error: %s", provider, err)
 	}
 
-	res, err = db.GetLastUpdateTime(provider)
+	res, err = db.GetUserLastUpdateTime(login, provider)
 	if err != nil {
 		t.Errorf("Fail! Could not fetch '%s' provider. Internal error: %s", provider, err)
 	}
@@ -584,6 +586,7 @@ func TestLastUpdateTimeStorage(t *testing.T) {
 	} else {
 		t.Errorf("Fail! Error getting '%s' provider. Expected zero time, got %s", provider, err)
 	}
+	removeTestUser(u)
 }
 
 func TestMultipleOperations(t *testing.T) {
@@ -902,12 +905,13 @@ func removeTestPortfolios(pid primitive.ObjectID) {
 	db.portfolios.DeleteMany(ctx, filter, opts)
 }
 
-func addTestUser() primitive.ObjectID {
+func addTestUser(login string) primitive.ObjectID {
 	ctx := db.context()
 	opts := options.InsertOne()
 	var testItem interface{} = struct {
 		TestKey string `bson:"test_key"`
-	}{"test_value"}
+		Login   string `bson:"login"`
+	}{"test_value", login}
 
 	r, _ := db.users.InsertOne(ctx, testItem, opts)
 	return r.InsertedID.(primitive.ObjectID)

@@ -8,47 +8,50 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// AddLastUpdateTime saves last date when specified provider made sync
-func (db Db) AddLastUpdateTime(provider string, date time.Time) error {
+// AddUserLastUpdateTime saves last date when specified provider made sync
+func (db Db) AddUserLastUpdateTime(login string, provider string, date time.Time) error {
 	ctx := db.context()
-	filter := bson.M{"provider": provider}
-	update := bson.M{"$set": bson.M{"date": date}}
-	opts := options.Update().SetUpsert(true)
+	filter := bson.M{"login": login}
+	update := bson.M{"$set": bson.M{"lastSync": bson.M{"date": date, "provider": provider}}}
+	opts := options.Update()
 
-	_, err := db.syncs.UpdateOne(ctx, filter, update, opts)
+	_, err := db.users.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// DeleteLastUpdateTime removes last date when specified provider made sync
-func (db Db) DeleteLastUpdateTime(provider string) error {
+// DeleteUserLastUpdateTime removes last date when specified provider made sync
+func (db Db) DeleteUserLastUpdateTime(login string, provider string) error {
 	ctx := db.context()
-	filter := bson.M{"provider": provider}
-	opts := options.Delete()
+	filter := bson.M{"login": login}
+	update := bson.M{"$unset": bson.M{"lastSync": ""}}
+	opts := options.Update()
 
-	_, err := db.syncs.DeleteOne(ctx, filter, opts)
+	_, err := db.users.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// GetLastUpdateTime receives last date when specified provider made sync
-func (db Db) GetLastUpdateTime(provider string) (time.Time, error) {
-	filter := bson.M{"provider": provider}
+// GetUserLastUpdateTime receives last date when specified provider made sync
+func (db Db) GetUserLastUpdateTime(login string, provider string) (time.Time, error) {
+	filter := bson.M{"$and": []interface{}{bson.M{"login": login}, bson.M{"provider": provider}}}
 	opts := options.FindOne()
 	ctx := db.context()
 
-	res := db.syncs.FindOne(ctx, filter, opts)
+	res := db.users.FindOne(ctx, filter, opts)
 	if res.Err() == mongo.ErrNoDocuments {
 		return time.Time{}, nil
 	}
 	var data struct {
-		Provider string    `bson:"provider"`
-		Date     time.Time `bson:"date"`
+		LastSync struct {
+			Provider string    `bson:"provider"`
+			Date     time.Time `bson:"date"`
+		} `bson:"lastSync"`
 	}
 	res.Decode(&data)
-	return data.Date, nil
+	return data.LastSync.Date, nil
 }
