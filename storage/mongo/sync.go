@@ -12,7 +12,7 @@ import (
 func (db Db) AddUserLastUpdateTime(login string, provider string, date time.Time) error {
 	ctx := db.context()
 	filter := bson.M{"login": login}
-	update := bson.M{"$set": bson.M{"lastSync": bson.M{"date": date, "provider": provider}}}
+	update := bson.M{"$push": bson.M{"lastSync": bson.M{"date": date.Format(time.RFC3339Nano), "provider": provider}}}
 	opts := options.Update()
 
 	_, err := db.users.UpdateOne(ctx, filter, update, opts)
@@ -26,7 +26,7 @@ func (db Db) AddUserLastUpdateTime(login string, provider string, date time.Time
 func (db Db) DeleteUserLastUpdateTime(login string, provider string) error {
 	ctx := db.context()
 	filter := bson.M{"login": login}
-	update := bson.M{"$unset": bson.M{"lastSync": ""}}
+	update := bson.M{"$pull": bson.M{"lastSync": bson.M{"provider": provider}}}
 	opts := options.Update()
 
 	_, err := db.users.UpdateOne(ctx, filter, update, opts)
@@ -38,7 +38,7 @@ func (db Db) DeleteUserLastUpdateTime(login string, provider string) error {
 
 // GetUserLastUpdateTime receives last date when specified provider made sync
 func (db Db) GetUserLastUpdateTime(login string, provider string) (time.Time, error) {
-	filter := bson.M{"$and": []interface{}{bson.M{"login": login}, bson.M{"provider": provider}}}
+	filter := bson.M{"login": login}
 	opts := options.FindOne()
 	ctx := db.context()
 
@@ -47,11 +47,21 @@ func (db Db) GetUserLastUpdateTime(login string, provider string) (time.Time, er
 		return time.Time{}, nil
 	}
 	var data struct {
-		LastSync struct {
-			Provider string    `bson:"provider"`
-			Date     time.Time `bson:"date"`
+		LastSync []struct {
+			Provider string `bson:"provider"`
+			Date     string `bson:"date"`
 		} `bson:"lastSync"`
 	}
+
 	res.Decode(&data)
-	return data.LastSync.Date, nil
+	result := time.Time{}
+	for _, it := range data.LastSync {
+		if it.Provider == provider {
+			t, _ := time.Parse(time.RFC3339Nano, it.Date)
+			result = t
+			break
+		}
+	}
+
+	return result, nil
 }
