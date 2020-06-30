@@ -15,6 +15,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/storage"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -42,27 +43,28 @@ type securitiesInfo struct {
 }
 
 // Sberbank sync sber
-func Sberbank() error {
+func Sberbank(login string, pid string) error {
 	srv, err := getGmailService()
 	if err != nil {
 		return err
 	}
 
 	s := storage.GetStorage()
-	t, err := s.GetUserLastUpdateTime("", "sberbank")
+	t, err := s.GetUserLastUpdateTime(login, "sberbank")
 	if err != nil {
 		return err
 	}
+
 	query := "from:broker_rep@sberbank.ru subject:report filename:html"
 	if !t.IsZero() {
 		query = fmt.Sprintf("%s after:%s", query, t.Format("2006/01/02"))
 	}
 
 	r, err := srv.Users.Messages.List("me").Q(query).Do()
-
 	if err != nil {
 		return err
 	}
+
 	for _, m := range r.Messages {
 		msg, err := srv.Users.Messages.Get("me", m.Id).Do()
 		if err != nil {
@@ -86,10 +88,25 @@ func Sberbank() error {
 		op, sir, mv, _ := fetchTables(reader)
 		opInfo := getOperationsInfo(parseTable(op), parseTable(mv), getSecuritiesInfo(parseTable(sir)))
 
-		for _, o := range opInfo {
-			fmt.Println(o)
+		ops := make([]models.Operation, len(opInfo))
+		for i, o := range opInfo {
+			t := models.Operation{
+				PortfolioID:   pid,
+				Currency:      models.Currency(o.Currency),
+				Price:         o.Price,
+				Volume:        o.Volume,
+				ISIN:          o.ISIN,
+				Ticker:        o.Ticker,
+				DateTime:      o.OperationTime,
+				OperationType: models.OperationType(o.OperationType),
+			}
+			ops[i] = t
 		}
-		break
+
+		_, err = s.AddOperations(pid, ops)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
