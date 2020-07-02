@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kaseat/pManager/gmail"
-	"github.com/kaseat/pManager/models"
+	"github.com/kaseat/pManager/models/currency"
 	"github.com/kaseat/pManager/storage"
 	"github.com/kaseat/pManager/utils"
 )
@@ -78,15 +78,15 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 	pid := mux.Vars(r)["id"]
 	user := r.Header.Get("user")
 
-	curr := models.Currency(r.FormValue("currency"))
+	curr := currency.Type(r.FormValue("currency"))
 	if curr == "" {
 		writeError(w, http.StatusBadRequest, fmt.Sprint("You must provide 'currency' parameter"))
 		return
 	}
 
-	if !(curr == models.EUR || curr == models.RUB || curr == models.USD) {
+	if !(curr == currency.EUR || curr == currency.RUB || curr == currency.USD) {
 		writeError(w, http.StatusBadRequest, fmt.Sprintf("Unknown currency '%s'. Expected '%s', '%s' or '%s'",
-			curr, models.EUR, models.RUB, models.USD))
+			curr, currency.EUR, currency.RUB, currency.USD))
 		return
 	}
 

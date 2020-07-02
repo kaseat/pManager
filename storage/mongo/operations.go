@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/kaseat/pManager/models"
+	"github.com/kaseat/pManager/models/currency"
+	"github.com/kaseat/pManager/models/operation"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -200,14 +202,14 @@ func (db Db) getOperations(filter primitive.M, findOptions *options.FindOptions)
 		data := models.Operation{
 			PortfolioID:   op.PortfolioID,
 			OperationID:   op.OperationID,
-			Currency:      models.Currency(op.Currency),
+			Currency:      currency.Type(op.Currency),
 			Price:         float64(op.Price) / 1e6,
 			Volume:        op.Volume,
 			FIGI:          op.FIGI,
 			ISIN:          op.ISIN,
 			Ticker:        op.Ticker,
 			DateTime:      op.DateTime,
-			OperationType: models.OperationType(op.OperationType),
+			OperationType: operation.Type(op.OperationType),
 		}
 		results[i] = data
 	}

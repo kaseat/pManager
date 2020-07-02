@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/kaseat/pManager/models"
+	"github.com/kaseat/pManager/models/currency"
+	"github.com/kaseat/pManager/models/operation"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -941,23 +943,23 @@ func getTime() time.Time {
 func getOperations(now time.Time) []models.Operation {
 	ops := []models.Operation{}
 	op1 := models.Operation{
-		Currency:      models.RUB,
+		Currency:      currency.RUB,
 		Price:         50.5351,
 		Volume:        150,
 		ISIN:          "IE00BD3QHZ91",
 		Ticker:        "FXUS",
 		DateTime:      now,
-		OperationType: models.Buy,
+		OperationType: operation.Buy,
 	}
 
 	op2 := models.Operation{
-		Currency:      models.RUB,
+		Currency:      currency.RUB,
 		Price:         0.89,
 		Volume:        1,
 		FIGI:          "BBG0013HGFT4",
 		Ticker:        "RUB",
 		DateTime:      now.AddDate(0, 0, 2),
-		OperationType: models.BrokerageFee,
+		OperationType: operation.BrokerageFee,
 	}
 	ops = append(ops, op1, op2)
 	return ops

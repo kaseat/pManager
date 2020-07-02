@@ -4,16 +4,17 @@ import (
 	"math"
 
 	"github.com/kaseat/pManager/models"
+	"github.com/kaseat/pManager/models/operation"
 	"github.com/oleiade/lane"
 )
 
 // GetSum returns blance for given operations
 func GetSum(operations []models.Operation) float64 {
 	sum := int64(0)
-	for _, opertion := range operations {
-		amount := int64(opertion.Price*1e6) * opertion.Volume
-		switch opertion.OperationType {
-		case models.PayIn, models.Sell:
+	for _, op := range operations {
+		amount := int64(op.Price*1e6) * op.Volume
+		switch op.OperationType {
+		case operation.PayIn, operation.Sell:
 			sum += amount
 		default:
 			sum -= amount
@@ -26,7 +27,7 @@ func GetSum(operations []models.Operation) float64 {
 func GetAverage(ops []models.Operation) float64 {
 	d := lane.NewDeque()
 	for _, op := range ops {
-		if op.OperationType == models.Buy {
+		if op.OperationType == operation.Buy {
 			d.Append(op)
 		} else {
 			for {

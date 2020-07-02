@@ -3,23 +3,19 @@ package sync
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
 
+	"github.com/kaseat/pManager/gmail"
 	"github.com/kaseat/pManager/models"
+	"github.com/kaseat/pManager/models/currency"
+	"github.com/kaseat/pManager/models/operation"
 	"github.com/kaseat/pManager/storage"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/gmail/v1"
 )
 
 type pair struct {
@@ -44,7 +40,8 @@ type securitiesInfo struct {
 
 // Sberbank sync sber
 func Sberbank(login string, pid string) error {
-	srv, err := getGmailService()
+	cl := gmail.GetClient()
+	srv, err := cl.GetServiceForUser(login)
 	if err != nil {
 		return err
 	}
@@ -76,32 +73,24 @@ func Sberbank(login string, pid string) error {
 				attachmentID = p.Body.AttachmentId
 			}
 		}
+
 		att, err := srv.Users.Messages.Attachments.Get("me", m.Id, attachmentID).Do()
 		if err != nil {
 			return err
 		}
+
 		b, err := base64.URLEncoding.DecodeString(att.Data)
 		if err != nil {
 			return err
 		}
-		reader := bytes.NewReader(b)
-		op, sir, mv, _ := fetchTables(reader)
-		opInfo := getOperationsInfo(parseTable(op), parseTable(mv), getSecuritiesInfo(parseTable(sir)))
 
-		ops := make([]models.Operation, len(opInfo))
-		for i, o := range opInfo {
-			t := models.Operation{
-				PortfolioID:   pid,
-				Currency:      models.Currency(o.Currency),
-				Price:         o.Price,
-				Volume:        o.Volume,
-				ISIN:          o.ISIN,
-				Ticker:        o.Ticker,
-				DateTime:      o.OperationTime,
-				OperationType: models.OperationType(o.OperationType),
-			}
-			ops[i] = t
+		reader := bytes.NewReader(b)
+		op, sir, mv, err := fetchTables(reader)
+		if err != nil {
+			return err
 		}
+
+		ops := getOperations(parseTable(op), parseTable(mv), getSecuritiesInfo(parseTable(sir)))
 
 		_, err = s.AddOperations(pid, ops)
 		if err != nil {
@@ -109,33 +98,6 @@ func Sberbank(login string, pid string) error {
 		}
 	}
 	return nil
-}
-
-func getGmailService() (*gmail.Service, error) {
-	b, err := ioutil.ReadFile("credentials.json")
-	if err != nil {
-		return nil, err
-	}
-	config, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err := os.Open("token.json")
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	token := &oauth2.Token{}
-	err = json.NewDecoder(f).Decode(token)
-
-	client := config.Client(context.Background(), token)
-
-	srv, err := gmail.New(client)
-	if err != nil {
-		return nil, err
-	}
-	return srv, nil
 }
 
 func parseFloat(str string) float64 {
@@ -150,8 +112,8 @@ func parseFloat(str string) float64 {
 	return r
 }
 
-func findPayIn(rt [][]string) []operationInfo {
-	operations := []operationInfo{}
+func findPayIn(rt [][]string) []models.Operation {
+	operations := []models.Operation{}
 	for _, row := range rt[1:] {
 		if len(row) != 6 {
 			continue
@@ -162,67 +124,89 @@ func findPayIn(rt [][]string) []operationInfo {
 		rawTime := fmt.Sprintf("%sT10:00:00+03:00", row[0])
 		time, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
 
-		payIn := operationInfo{
-			Currency:      row[3],
+		payIn := models.Operation{
+			Currency:      currency.Type(row[3]),
 			Price:         1,
 			Volume:        int64(parseFloat(row[4])),
 			ISIN:          "BBG0013HGFT4",
 			Ticker:        "RUB",
-			OperationTime: time,
-			OperationType: "payIn",
+			DateTime:      time,
+			OperationType: operation.PayIn,
 		}
 		operations = append(operations, payIn)
 	}
 	return operations
 }
 
-func getOperationsInfo(rt [][]string, mv [][]string, si map[string]securitiesInfo) []operationInfo {
-	operations := []operationInfo{}
+func getOperations(rt [][]string, mv [][]string, si map[string]securitiesInfo) []models.Operation {
+	operations := []models.Operation{}
 
 	for _, row := range rt[1:] {
 		if len(row) != 16 {
 			continue
 		}
 		rawTime := fmt.Sprintf("%sT%s+03:00", row[0], row[2])
-		time, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
-		var opType string
+		opTime, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
+		var opType operation.Type
 		switch o := row[6]; o {
 		case "Покупка":
-			opType = "buy"
+			opType = operation.Buy
 		case "Продажа":
-			opType = "sell"
+			opType = operation.Sell
 		default:
-			opType = "unknown"
+			opType = operation.Unknown
 		}
 
-		op := operationInfo{
-			Currency:      row[5],
-			Price:         parseFloat(row[8]),
+		op := models.Operation{
+			Currency:      currency.RUB,
 			Volume:        int64(parseFloat(row[7])),
 			ISIN:          si[row[4]].ISIN,
 			Ticker:        row[4],
-			OperationTime: time,
+			DateTime:      opTime,
 			OperationType: opType,
 		}
 
-		brokerFee := operationInfo{
-			Currency:      row[5],
-			Price:         -parseFloat(row[11]),
-			Volume:        1,
-			ISIN:          "BBG0013HGFT4",
-			Ticker:        "RUB",
-			OperationTime: time,
-			OperationType: "brokerFee",
+		if si[row[4]].IsBond {
+			op.Price = parseFloat(row[9]) / parseFloat(row[7])
+
+			interest := models.Operation{
+				Currency: currency.RUB,
+				Price:    parseFloat(row[11]),
+				Volume:   1,
+				ISIN:     "BBG0013HGFT4",
+				Ticker:   "RUB",
+				DateTime: opTime,
+			}
+			if opType == operation.Buy {
+				interest.OperationType = operation.AccInterestBuy
+			}
+			if opType == operation.Sell {
+				interest.OperationType = operation.AccInterestSell
+			}
+			operations = append(operations, interest)
+
+		} else {
+			op.Price = parseFloat(row[8])
 		}
 
-		exchangeFee := operationInfo{
-			Currency:      row[5],
-			Price:         -parseFloat(row[12]),
+		brokerFee := models.Operation{
+			Currency:      currency.RUB,
+			Price:         parseFloat(row[11]),
 			Volume:        1,
 			ISIN:          "BBG0013HGFT4",
 			Ticker:        "RUB",
-			OperationTime: time,
-			OperationType: "exchangeFee",
+			DateTime:      opTime,
+			OperationType: operation.BrokerageFee,
+		}
+
+		exchangeFee := models.Operation{
+			Currency:      currency.RUB,
+			Price:         parseFloat(row[12]),
+			Volume:        1,
+			ISIN:          "BBG0013HGFT4",
+			Ticker:        "RUB",
+			DateTime:      opTime,
+			OperationType: operation.BrokerageFee,
 		}
 		operations = append(operations, op, brokerFee, exchangeFee)
 	}
