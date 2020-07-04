@@ -8,6 +8,7 @@ import (
 	"github.com/kaseat/pManager/gmail"
 	"github.com/kaseat/pManager/models/currency"
 	"github.com/kaseat/pManager/storage"
+	"github.com/kaseat/pManager/sync"
 	"github.com/kaseat/pManager/utils"
 )
 
@@ -147,6 +148,34 @@ func AppCallback(w http.ResponseWriter, r *http.Request) {
 
 	cl := gmail.GetClient()
 	err := cl.HandleResponse(state, code)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeOk(w, struct {
+		Status string `json:"status"`
+	}{Status: "ok"})
+}
+
+// SyncOperations sync operations
+// @summary Sync operations
+// @description Sync operations for given portfolio
+// @id sync-op
+// @produce json
+// @param id path string true "Portfolio Id"
+// @success 200 {array} getBalanceSuccess "Returns balance of given currency"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags misc
+// @security ApiKeyAuth
+// @router /portfolios/{id}/sync [get]
+func SyncOperations(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	pid := mux.Vars(r)["id"]
+	login := r.Header.Get("user")
+
+	err := sync.Sberbank(login, pid)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return

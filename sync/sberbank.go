@@ -97,6 +97,11 @@ func Sberbank(login string, pid string) error {
 			return err
 		}
 	}
+
+	err = s.AddUserLastUpdateTime(login, "sberbank", time.Now())
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -206,11 +211,15 @@ func getOperations(rt [][]string, mv [][]string, si map[string]securitiesInfo) [
 			ISIN:          "BBG0013HGFT4",
 			Ticker:        "RUB",
 			DateTime:      opTime,
-			OperationType: operation.BrokerageFee,
+			OperationType: operation.ExchangeFee,
 		}
 		operations = append(operations, op, brokerFee, exchangeFee)
 	}
-	operations = append(operations, findPayIn(mv)...)
+
+	operations = append(operations)
+	if len(mv) > 0 {
+		operations = append(findPayIn(mv))
+	}
 
 	return operations
 }

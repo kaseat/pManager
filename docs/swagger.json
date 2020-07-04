@@ -9,7 +9,7 @@
         },
         "version": "1.0"
     },
-    "host": "localhost",
+    "host": "totallink.ru",
     "basePath": "/api",
     "paths": {
         "/misc/gmail/url": {
@@ -598,6 +598,56 @@
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/api.delMutileSuccess"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Returns when any processing error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Returns when authentication error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/portfolios/{id}/sync": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Sync operations for given portfolio",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "misc"
+                ],
+                "summary": "Sync operations",
+                "operationId": "sync-op",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Portfolio Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns balance of given currency",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.getBalanceSuccess"
                             }
                         }
                     },

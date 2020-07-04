@@ -16,7 +16,7 @@ import (
 // @version 1.0
 // @license.name MIT
 // @license.url https://github.com/kaseat/pManager/blob/master/LICENSE
-// @host localhost
+// @host totallink.ru
 // @BasePath /api
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
@@ -52,6 +52,7 @@ func main() {
 	portfolios.HandleFunc("/{id}/operations", api.DeleteAllOperations).Methods("DELETE")
 	portfolios.HandleFunc("/{id}/average", api.GetAveragePrice).Methods("GET")
 	portfolios.HandleFunc("/{id}/balance", api.GetBalance).Methods("GET")
+	portfolios.HandleFunc("/{id}/sync", api.SyncOperations).Methods("GET")
 	router.HandleFunc("/api/user/login", api.Login).Methods("POST")
 	router.HandleFunc("/api/user/signup", api.SignUp).Methods("POST")
 	router.HandleFunc("/api/google/callback", api.AppCallback).Methods("GET")

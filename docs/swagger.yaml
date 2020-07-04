@@ -141,7 +141,7 @@ definitions:
         example: Best portfolio
         type: string
     type: object
-host: localhost
+host: totallink.ru
 info:
   contact: {}
   license:
@@ -539,6 +539,38 @@ paths:
       summary: Add new operation
       tags:
       - operations
+  /portfolios/{id}/sync:
+    get:
+      description: Sync operations for given portfolio
+      operationId: sync-op
+      parameters:
+      - description: Portfolio Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns balance of given currency
+          schema:
+            items:
+              $ref: '#/definitions/api.getBalanceSuccess'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Sync operations
+      tags:
+      - misc
   /token/validate:
     get:
       description: get string by ID
