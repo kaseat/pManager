@@ -549,6 +549,14 @@ paths:
         name: id
         required: true
         type: string
+      - description: Filter operations from this date
+        in: query
+        name: from
+        type: string
+      - description: Filter operations till this date
+        in: query
+        name: to
+        type: string
       produces:
       - application/json
       responses:

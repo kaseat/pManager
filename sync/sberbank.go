@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -39,7 +40,7 @@ type securitiesInfo struct {
 }
 
 // Sberbank sync sber
-func Sberbank(login string, pid string) error {
+func Sberbank(login, pid, from, to string) error {
 	cl := gmail.GetClient()
 	srv, err := cl.GetServiceForUser(login)
 	if err != nil {
@@ -56,6 +57,12 @@ func Sberbank(login string, pid string) error {
 	if !t.IsZero() {
 		query = fmt.Sprintf("%s after:%s", query, t.Format("2006/01/02"))
 	}
+	if from != "" {
+		query = fmt.Sprintf("%s after:%s", query, from)
+	}
+	if to != "" {
+		query = fmt.Sprintf("%s before:%s", query, to)
+	}
 
 	r, err := srv.Users.Messages.List("me").Q(query).Do()
 	if err != nil {
@@ -64,6 +71,7 @@ func Sberbank(login string, pid string) error {
 
 	for _, m := range r.Messages {
 		msg, err := srv.Users.Messages.Get("me", m.Id).Do()
+
 		if err != nil {
 			return err
 		}
@@ -92,10 +100,14 @@ func Sberbank(login string, pid string) error {
 
 		ops := getOperations(parseTable(op), parseTable(mv), getSecuritiesInfo(parseTable(sir)))
 
-		_, err = s.AddOperations(pid, ops)
-		if err != nil {
-			return err
+		if len(ops) != 0 {
+			_, err = s.AddOperations(pid, ops)
+			if err != nil {
+				return err
+			}
 		}
+
+		fmt.Println("Parse message on", time.Unix(msg.InternalDate/1000, 0), "ok!")
 	}
 
 	err = s.AddUserLastUpdateTime(login, "sberbank", time.Now())
@@ -145,80 +157,80 @@ func findPayIn(rt [][]string) []models.Operation {
 
 func getOperations(rt [][]string, mv [][]string, si map[string]securitiesInfo) []models.Operation {
 	operations := []models.Operation{}
-
-	for _, row := range rt[1:] {
-		if len(row) != 16 {
-			continue
-		}
-		rawTime := fmt.Sprintf("%sT%s+03:00", row[0], row[2])
-		opTime, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
-		var opType operation.Type
-		switch o := row[6]; o {
-		case "Покупка":
-			opType = operation.Buy
-		case "Продажа":
-			opType = operation.Sell
-		default:
-			opType = operation.Unknown
-		}
-
-		op := models.Operation{
-			Currency:      currency.RUB,
-			Volume:        int64(parseFloat(row[7])),
-			ISIN:          si[row[4]].ISIN,
-			Ticker:        row[4],
-			DateTime:      opTime,
-			OperationType: opType,
-		}
-
-		if si[row[4]].IsBond {
-			op.Price = parseFloat(row[9]) / parseFloat(row[7])
-
-			interest := models.Operation{
-				Currency: currency.RUB,
-				Price:    parseFloat(row[11]),
-				Volume:   1,
-				ISIN:     "BBG0013HGFT4",
-				Ticker:   "RUB",
-				DateTime: opTime,
+	if len(rt) > 0 {
+		for _, row := range rt[1:] {
+			if len(row) != 16 {
+				continue
 			}
-			if opType == operation.Buy {
-				interest.OperationType = operation.AccInterestBuy
+			rawTime := fmt.Sprintf("%sT%s+03:00", row[0], row[2])
+			opTime, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
+			var opType operation.Type
+			switch o := row[6]; o {
+			case "Покупка":
+				opType = operation.Buy
+			case "Продажа":
+				opType = operation.Sell
+			default:
+				opType = operation.Unknown
 			}
-			if opType == operation.Sell {
-				interest.OperationType = operation.AccInterestSell
+
+			op := models.Operation{
+				Currency:      currency.RUB,
+				Volume:        int64(parseFloat(row[7])),
+				ISIN:          si[row[4]].ISIN,
+				Ticker:        row[4],
+				DateTime:      opTime,
+				OperationType: opType,
 			}
-			operations = append(operations, interest)
 
-		} else {
-			op.Price = parseFloat(row[8])
-		}
+			if si[row[4]].IsBond {
+				op.Price = parseFloat(row[9]) / parseFloat(row[7])
 
-		brokerFee := models.Operation{
-			Currency:      currency.RUB,
-			Price:         parseFloat(row[11]),
-			Volume:        1,
-			ISIN:          "BBG0013HGFT4",
-			Ticker:        "RUB",
-			DateTime:      opTime,
-			OperationType: operation.BrokerageFee,
-		}
+				interest := models.Operation{
+					Currency: currency.RUB,
+					Price:    parseFloat(row[11]),
+					Volume:   1,
+					ISIN:     "BBG0013HGFT4",
+					Ticker:   "RUB",
+					DateTime: opTime,
+				}
+				if opType == operation.Buy {
+					interest.OperationType = operation.AccInterestBuy
+				}
+				if opType == operation.Sell {
+					interest.OperationType = operation.AccInterestSell
+				}
+				operations = append(operations, interest)
 
-		exchangeFee := models.Operation{
-			Currency:      currency.RUB,
-			Price:         parseFloat(row[12]),
-			Volume:        1,
-			ISIN:          "BBG0013HGFT4",
-			Ticker:        "RUB",
-			DateTime:      opTime,
-			OperationType: operation.ExchangeFee,
+			} else {
+				op.Price = parseFloat(row[8])
+			}
+
+			brokerFee := models.Operation{
+				Currency:      currency.RUB,
+				Price:         parseFloat(row[11]),
+				Volume:        1,
+				ISIN:          "BBG0013HGFT4",
+				Ticker:        "RUB",
+				DateTime:      opTime,
+				OperationType: operation.BrokerageFee,
+			}
+
+			exchangeFee := models.Operation{
+				Currency:      currency.RUB,
+				Price:         parseFloat(row[12]),
+				Volume:        1,
+				ISIN:          "BBG0013HGFT4",
+				Ticker:        "RUB",
+				DateTime:      opTime,
+				OperationType: operation.ExchangeFee,
+			}
+			operations = append(operations, op, brokerFee, exchangeFee)
 		}
-		operations = append(operations, op, brokerFee, exchangeFee)
 	}
 
-	operations = append(operations)
 	if len(mv) > 0 {
-		operations = append(findPayIn(mv))
+		operations = append(operations, findPayIn(mv)...)
 	}
 
 	return operations
@@ -226,13 +238,14 @@ func getOperations(rt [][]string, mv [][]string, si map[string]securitiesInfo) [
 
 func getSecuritiesInfo(rt [][]string) map[string]securitiesInfo {
 	si := map[string]securitiesInfo{}
-
-	for _, s := range rt[1:] {
-		isBond := false
-		if s[4] == "Облигация" {
-			isBond = true
+	if len(rt) > 0 {
+		for _, s := range rt[1:] {
+			isBond := false
+			if s[4] == "Облигация" {
+				isBond = true
+			}
+			si[s[1]] = securitiesInfo{Ticker: s[1], ISIN: s[2], IsBond: isBond}
 		}
-		si[s[1]] = securitiesInfo{Ticker: s[1], ISIN: s[2], IsBond: isBond}
 	}
 	return si
 }
@@ -244,6 +257,14 @@ func fetchTables(r io.Reader) (string, string, string, error) {
 	scanner := bufio.NewScanner(r)
 
 	for scanner.Scan() {
+		if scanner.Text() == "<br>Отчет брокера</br>" {
+			scanner.Scan()
+			re := regexp.MustCompile(`\d{2}.\d{2}.\d{4}`)
+			match := re.FindAllString(scanner.Text(), -1)
+			if match[0] != match[1] {
+				return "", "", "", nil
+			}
+		}
 		if scanner.Text() == "<br>Сделки купли/продажи ценных бумаг</br>" {
 			scanner.Scan()
 			for scanner.Scan() {

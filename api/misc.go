@@ -164,6 +164,8 @@ func AppCallback(w http.ResponseWriter, r *http.Request) {
 // @id sync-op
 // @produce json
 // @param id path string true "Portfolio Id"
+// @param from query string false "Filter operations from this date"
+// @param to query string false "Filter operations till this date"
 // @success 200 {array} getBalanceSuccess "Returns balance of given currency"
 // @failure 400 {object} errorResponse "Returns when any processing error occurs"
 // @failure 401 {object} errorResponse "Returns when authentication error occurs"
@@ -175,7 +177,7 @@ func SyncOperations(w http.ResponseWriter, r *http.Request) {
 	pid := mux.Vars(r)["id"]
 	login := r.Header.Get("user")
 
-	err := sync.Sberbank(login, pid)
+	err := sync.Sberbank(login, pid, r.FormValue("from"), r.FormValue("to"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
