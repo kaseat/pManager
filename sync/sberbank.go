@@ -69,6 +69,8 @@ func Sberbank(login, pid, from, to string) error {
 		return err
 	}
 
+	parsedDates := make(map[string]bool)
+
 	for _, m := range r.Messages {
 		msg, err := srv.Users.Messages.Get("me", m.Id).Do()
 
@@ -93,7 +95,7 @@ func Sberbank(login, pid, from, to string) error {
 		}
 
 		reader := bytes.NewReader(b)
-		op, sir, mv, err := fetchTables(reader)
+		op, sir, mv, err := fetchTables(reader, parsedDates)
 		if err != nil {
 			return err
 		}
@@ -250,13 +252,14 @@ func getSecuritiesInfo(rt [][]string) map[string]securitiesInfo {
 	return si
 }
 
-func fetchTables(r io.Reader) (string, string, string, error) {
+func fetchTables(r io.Reader, parsedDates map[string]bool) (string, string, string, error) {
 	var operationsTable strings.Builder
 	var securitiesInfoTable strings.Builder
 	var movementsTable strings.Builder
 	scanner := bufio.NewScanner(r)
 
 	for scanner.Scan() {
+		// discard monthly reports and duplicates
 		if scanner.Text() == "<br>Отчет брокера</br>" {
 			scanner.Scan()
 			re := regexp.MustCompile(`\d{2}.\d{2}.\d{4}`)
@@ -264,6 +267,10 @@ func fetchTables(r io.Reader) (string, string, string, error) {
 			if match[0] != match[1] {
 				return "", "", "", nil
 			}
+			if parsedDates[match[0]] {
+				return "", "", "", nil
+			}
+			parsedDates[match[0]] = true
 		}
 		if scanner.Text() == "<br>Сделки купли/продажи ценных бумаг</br>" {
 			scanner.Scan()

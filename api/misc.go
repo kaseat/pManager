@@ -177,11 +177,7 @@ func SyncOperations(w http.ResponseWriter, r *http.Request) {
 	pid := mux.Vars(r)["id"]
 	login := r.Header.Get("user")
 
-	err := sync.Sberbank(login, pid, r.FormValue("from"), r.FormValue("to"))
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	go sync.Sberbank(login, pid, r.FormValue("from"), r.FormValue("to"))
 
 	writeOk(w, struct {
 		Status string `json:"status"`
