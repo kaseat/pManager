@@ -19,6 +19,10 @@ type putPortfoliioSuccess struct {
 	HasModified bool `json:"hasModified" example:"true"`
 }
 
+type commonResponse struct {
+	Status string `json:"status" example:"ok"`
+}
+
 type delPortfoliioSuccess struct {
 	HasDeleted bool `json:"hasDeleted" example:"true"`
 }
@@ -27,7 +31,7 @@ type delMutileSuccess struct {
 	DeletedItems int64 `json:"DeletedItems" example:"42"`
 }
 
-type GmailAuthUrlSuccess struct {
+type gmailAuthUrlSuccess struct {
 	URL string `json:"url" example:"https://google.com"`
 }
 

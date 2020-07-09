@@ -1,11 +1,5 @@
 basePath: /api
 definitions:
-  api.GmailAuthUrlSuccess:
-    properties:
-      url:
-        example: https://google.com
-        type: string
-    type: object
   api.addOperationSuccess:
     properties:
       createdOperationId:
@@ -16,6 +10,12 @@ definitions:
     properties:
       createdPortfolioId:
         example: 5edb2a0e550dfc5f16392838
+        type: string
+    type: object
+  api.commonResponse:
+    properties:
+      status:
+        example: ok
         type: string
     type: object
   api.delMutileSuccess:
@@ -47,6 +47,12 @@ definitions:
       balance:
         example: 42
         type: number
+    type: object
+  api.gmailAuthUrlSuccess:
+    properties:
+      url:
+        example: https://google.com
+        type: string
     type: object
   api.operationRequest:
     properties:
@@ -161,7 +167,7 @@ paths:
           description: Returns url for GMail auth
           schema:
             items:
-              $ref: '#/definitions/api.GmailAuthUrlSuccess'
+              $ref: '#/definitions/api.gmailAuthUrlSuccess'
             type: array
         "400":
           description: Returns when any processing error occurs
@@ -561,10 +567,10 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns balance of given currency
+          description: Returns success status
           schema:
             items:
-              $ref: '#/definitions/api.getBalanceSuccess'
+              $ref: '#/definitions/api.commonResponse'
             type: array
         "400":
           description: Returns when any processing error occurs

@@ -119,7 +119,7 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 // @description Gets url for GMail auth
 // @id get-gmail-url
 // @produce json
-// @success 200 {array} GmailAuthUrlSuccess "Returns url for GMail auth"
+// @success 200 {array} gmailAuthUrlSuccess "Returns url for GMail auth"
 // @failure 400 {object} errorResponse "Returns when any processing error occurs"
 // @failure 401 {object} errorResponse "Returns when authentication error occurs"
 // @tags user
@@ -137,7 +137,7 @@ func AddGoogleAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOk(w, GmailAuthUrlSuccess{URL: url})
+	writeOk(w, gmailAuthUrlSuccess{URL: url})
 }
 
 // AppCallback saves respose from gmail
@@ -166,7 +166,7 @@ func AppCallback(w http.ResponseWriter, r *http.Request) {
 // @param id path string true "Portfolio Id"
 // @param from query string false "Filter operations from this date"
 // @param to query string false "Filter operations till this date"
-// @success 200 {array} getBalanceSuccess "Returns balance of given currency"
+// @success 200 {array} commonResponse "Returns success status"
 // @failure 400 {object} errorResponse "Returns when any processing error occurs"
 // @failure 401 {object} errorResponse "Returns when authentication error occurs"
 // @tags misc
@@ -179,7 +179,5 @@ func SyncOperations(w http.ResponseWriter, r *http.Request) {
 
 	go sync.Sberbank(login, pid, r.FormValue("from"), r.FormValue("to"))
 
-	writeOk(w, struct {
-		Status string `json:"status"`
-	}{Status: "ok"})
+	writeOk(w, commonResponse{Status: "ok"})
 }

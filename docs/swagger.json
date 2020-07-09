@@ -34,7 +34,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.GmailAuthUrlSuccess"
+                                "$ref": "#/definitions/api.gmailAuthUrlSuccess"
                             }
                         }
                     },
@@ -655,11 +655,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns balance of given currency",
+                        "description": "Returns success status",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.getBalanceSuccess"
+                                "$ref": "#/definitions/api.commonResponse"
                             }
                         }
                     },
@@ -804,15 +804,6 @@
         }
     },
     "definitions": {
-        "api.GmailAuthUrlSuccess": {
-            "type": "object",
-            "properties": {
-                "url": {
-                    "type": "string",
-                    "example": "https://google.com"
-                }
-            }
-        },
         "api.addOperationSuccess": {
             "type": "object",
             "properties": {
@@ -828,6 +819,15 @@
                 "createdPortfolioId": {
                     "type": "string",
                     "example": "5edb2a0e550dfc5f16392838"
+                }
+            }
+        },
+        "api.commonResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "ok"
                 }
             }
         },
@@ -873,6 +873,15 @@
                 "balance": {
                     "type": "number",
                     "example": 42
+                }
+            }
+        },
+        "api.gmailAuthUrlSuccess": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "example": "https://google.com"
                 }
             }
         },
