@@ -35,3 +35,10 @@ type User struct {
 	Login  string `json:"login" example:"mark123"`
 	Email  string `json:"email" example:"mark123@abc.com"`
 }
+
+// OperationSorter sorts operations by time.
+type OperationSorter []Operation
+
+func (a OperationSorter) Len() int           { return len(a) }
+func (a OperationSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a OperationSorter) Less(i, j int) bool { return a[i].DateTime.Unix() < a[j].DateTime.Unix() }

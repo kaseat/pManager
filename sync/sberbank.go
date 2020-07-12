@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -70,6 +71,7 @@ func Sberbank(login, pid, from, to string) error {
 	}
 
 	parsedDates := make(map[string]bool)
+	operations := make(map[models.Operation]bool)
 
 	for _, m := range r.Messages {
 		msg, err := srv.Users.Messages.Get("me", m.Id).Do()
@@ -102,14 +104,27 @@ func Sberbank(login, pid, from, to string) error {
 
 		ops := getOperations(parseTable(op), parseTable(mv), getSecuritiesInfo(parseTable(sir)))
 
-		if len(ops) != 0 {
-			_, err = s.AddOperations(pid, ops)
-			if err != nil {
-				return err
+		for _, it := range ops {
+			if !operations[it] {
+				operations[it] = true
 			}
 		}
 
 		fmt.Println("Parse message on", time.Unix(msg.InternalDate/1000, 0), "ok!")
+	}
+
+	if len(operations) != 0 {
+		ops := make([]models.Operation, 0)
+		for it := range operations {
+			ops = append(ops, it)
+		}
+
+		sort.Sort(models.OperationSorter(ops))
+		_, err = s.AddOperations(pid, ops)
+		if err != nil {
+			return err
+		}
+		fmt.Println("save opertions for", login, "to storge OK")
 	}
 
 	err = s.AddUserLastUpdateTime(login, "sberbank", time.Now())

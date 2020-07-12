@@ -137,7 +137,7 @@ func AddGoogleAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeOk(w, gmailAuthUrlSuccess{URL: url})
+	writeOk(w, gmailAuthURLSuccess{URL: url})
 }
 
 // AppCallback saves respose from gmail

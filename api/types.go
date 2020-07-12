@@ -31,7 +31,7 @@ type delMutileSuccess struct {
 	DeletedItems int64 `json:"DeletedItems" example:"42"`
 }
 
-type gmailAuthUrlSuccess struct {
+type gmailAuthURLSuccess struct {
 	URL string `json:"url" example:"https://google.com"`
 }
 
