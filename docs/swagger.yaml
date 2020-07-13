@@ -48,7 +48,7 @@ definitions:
         example: 42
         type: number
     type: object
-  api.gmailAuthUrlSuccess:
+  api.gmailAuthURLSuccess:
     properties:
       url:
         example: https://google.com
@@ -167,7 +167,7 @@ paths:
           description: Returns url for GMail auth
           schema:
             items:
-              $ref: '#/definitions/api.gmailAuthUrlSuccess'
+              $ref: '#/definitions/api.gmailAuthURLSuccess'
             type: array
         "400":
           description: Returns when any processing error occurs
@@ -410,6 +410,10 @@ paths:
         in: query
         name: currency
         required: true
+        type: string
+      - description: On date
+        in: query
+        name: "on"
         type: string
       produces:
       - application/json

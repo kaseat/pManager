@@ -67,6 +67,7 @@ func GetAveragePrice(w http.ResponseWriter, r *http.Request) {
 // @produce json
 // @param id path string true "Portfolio Id"
 // @param currency query string true "Currency"
+// @param on query string false "On date"
 // @success 200 {array} getBalanceSuccess "Returns balance of given currency"
 // @failure 400 {object} errorResponse "Returns when any processing error occurs"
 // @failure 401 {object} errorResponse "Returns when authentication error occurs"
@@ -78,6 +79,7 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 
 	pid := mux.Vars(r)["id"]
 	user := r.Header.Get("user")
+	on := r.FormValue("on")
 
 	curr := currency.Type(r.FormValue("currency"))
 	if curr == "" {
@@ -102,8 +104,7 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "You cannot get operations from this portfolio")
 		return
 	}
-
-	ops, err := s.GetOperations(pid, "curr", string(curr), "", "")
+	ops, err := s.GetOperations(pid, "curr", string(curr), "", on)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -119,7 +120,7 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 // @description Gets url for GMail auth
 // @id get-gmail-url
 // @produce json
-// @success 200 {array} gmailAuthUrlSuccess "Returns url for GMail auth"
+// @success 200 {array} gmailAuthURLSuccess "Returns url for GMail auth"
 // @failure 400 {object} errorResponse "Returns when any processing error occurs"
 // @failure 401 {object} errorResponse "Returns when authentication error occurs"
 // @tags user

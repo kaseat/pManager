@@ -34,7 +34,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.gmailAuthUrlSuccess"
+                                "$ref": "#/definitions/api.gmailAuthURLSuccess"
                             }
                         }
                     },
@@ -416,6 +416,12 @@
                         "name": "currency",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "On date",
+                        "name": "on",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -876,7 +882,7 @@
                 }
             }
         },
-        "api.gmailAuthUrlSuccess": {
+        "api.gmailAuthURLSuccess": {
             "type": "object",
             "properties": {
                 "url": {
