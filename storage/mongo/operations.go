@@ -134,7 +134,6 @@ func (db Db) GetOperations(portfolioID string, key string, value string, from st
 		and = append(and, bson.M{"time": bson.M{"$lte": dtime}})
 		hasParams = true
 	}
-
 	if hasParams {
 		and = append(and, filter)
 		filter = bson.M{"$and": and}

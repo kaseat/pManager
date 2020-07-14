@@ -22,6 +22,8 @@ const (
 	AccInterestBuy Type = "accruedInterestBuy"
 	// AccInterestSell operation
 	AccInterestSell Type = "accruedInterestSell"
+	// Buyback operation
+	Buyback Type = "buyback"
 	// Unknown operation
 	Unknown Type = "unknown"
 )

@@ -96,13 +96,10 @@ func Sberbank(login, pid, from, to string) error {
 			return err
 		}
 
-		reader := bytes.NewReader(b)
-		op, sir, mv, err := fetchTables(reader, parsedDates)
+		ops, err := getOperations(b, parsedDates)
 		if err != nil {
 			return err
 		}
-
-		ops := getOperations(parseTable(op), parseTable(mv), getSecuritiesInfo(parseTable(sir)))
 
 		for _, it := range ops {
 			if !operations[it] {
@@ -146,6 +143,29 @@ func parseFloat(str string) float64 {
 	return r
 }
 
+func findBuyback(table [][]string, si map[string]securitiesInfo) []models.Operation {
+	result := []models.Operation{}
+	if len(table) > 0 {
+		for _, col := range table[3:] {
+			if col[3] == "Выкуп ЦБ" {
+				rawTime := fmt.Sprintf("%sT10:00:00+03:00", col[0])
+				time, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
+				buyback := models.Operation{
+					Currency:      currency.RUB,
+					Price:         0,
+					Volume:        int64(parseFloat(col[5])),
+					ISIN:          si[col[4]].ISIN,
+					Ticker:        "RUB",
+					DateTime:      time,
+					OperationType: operation.Sell,
+				}
+				result = append(result, buyback)
+			}
+		}
+	}
+	return result
+}
+
 func findPayIn(rt [][]string) []models.Operation {
 	operations := []models.Operation{}
 	for _, row := range rt[1:] {
@@ -172,11 +192,26 @@ func findPayIn(rt [][]string) []models.Operation {
 	return operations
 }
 
-func getOperations(rt [][]string, mv [][]string, si map[string]securitiesInfo) []models.Operation {
-	operations := []models.Operation{}
-	if len(rt) > 0 {
-		for _, row := range rt[1:] {
+func getOperations(b []byte, parsedDates map[string]bool) ([]models.Operation, error) {
+	reader := bytes.NewReader(b)
+	tables, err := fetchTables(reader, parsedDates)
+	if err != nil {
+		return nil, err
+	}
+	operations := parseTable(tables[0])
+	securitiesInfo := parseTable(tables[1])
+	movements := parseTable(tables[2])
+	buybackTable := parseTable(tables[3])
+	si := getSecuritiesInfo(securitiesInfo)
+	buybacks := findBuyback(buybackTable, si)
+
+	result := []models.Operation{}
+	if len(operations) > 0 {
+		for _, row := range operations[1:] {
 			if len(row) != 16 {
+				continue
+			}
+			if !strings.Contains(row[15], "З") {
 				continue
 			}
 			rawTime := fmt.Sprintf("%sT%s+03:00", row[0], row[2])
@@ -205,7 +240,7 @@ func getOperations(rt [][]string, mv [][]string, si map[string]securitiesInfo) [
 
 				interest := models.Operation{
 					Currency: currency.RUB,
-					Price:    parseFloat(row[11]),
+					Price:    parseFloat(row[10]),
 					Volume:   1,
 					ISIN:     "BBG0013HGFT4",
 					Ticker:   "RUB",
@@ -217,7 +252,7 @@ func getOperations(rt [][]string, mv [][]string, si map[string]securitiesInfo) [
 				if opType == operation.Sell {
 					interest.OperationType = operation.AccInterestSell
 				}
-				operations = append(operations, interest)
+				result = append(result, interest)
 
 			} else {
 				op.Price = parseFloat(row[8])
@@ -242,15 +277,19 @@ func getOperations(rt [][]string, mv [][]string, si map[string]securitiesInfo) [
 				DateTime:      opTime,
 				OperationType: operation.ExchangeFee,
 			}
-			operations = append(operations, op, brokerFee, exchangeFee)
+			result = append(result, op, brokerFee, exchangeFee)
 		}
 	}
 
-	if len(mv) > 0 {
-		operations = append(operations, findPayIn(mv)...)
+	if len(movements) > 0 {
+		result = append(result, findPayIn(movements)...)
 	}
 
-	return operations
+	if len(buybacks) > 0 {
+		result = append(result, buybacks...)
+	}
+
+	return result, nil
 }
 
 func getSecuritiesInfo(rt [][]string) map[string]securitiesInfo {
@@ -267,10 +306,12 @@ func getSecuritiesInfo(rt [][]string) map[string]securitiesInfo {
 	return si
 }
 
-func fetchTables(r io.Reader, parsedDates map[string]bool) (string, string, string, error) {
+func fetchTables(r io.Reader, parsedDates map[string]bool) ([]string, error) {
+	result := make([]string, 4)
 	var operationsTable strings.Builder
 	var securitiesInfoTable strings.Builder
 	var movementsTable strings.Builder
+	var buybackTable strings.Builder
 	scanner := bufio.NewScanner(r)
 
 	for scanner.Scan() {
@@ -280,10 +321,10 @@ func fetchTables(r io.Reader, parsedDates map[string]bool) (string, string, stri
 			re := regexp.MustCompile(`\d{2}.\d{2}.\d{4}`)
 			match := re.FindAllString(scanner.Text(), -1)
 			if match[0] != match[1] {
-				return "", "", "", nil
+				return []string{}, nil
 			}
 			if parsedDates[match[0]] {
-				return "", "", "", nil
+				return []string{}, nil
 			}
 			parsedDates[match[0]] = true
 		}
@@ -314,8 +355,22 @@ func fetchTables(r io.Reader, parsedDates map[string]bool) (string, string, stri
 				}
 			}
 		}
+		if scanner.Text() == "<br>Движение ЦБ, не связанное с исполнением сделок</br>" {
+			scanner.Scan()
+			for scanner.Scan() {
+				buybackTable.Write(scanner.Bytes())
+				if scanner.Text() == "</table>" {
+					break
+				}
+			}
+		}
+
 	}
-	return operationsTable.String(), securitiesInfoTable.String(), movementsTable.String(), scanner.Err()
+	result[0] = operationsTable.String()
+	result[1] = securitiesInfoTable.String()
+	result[2] = movementsTable.String()
+	result[3] = buybackTable.String()
+	return result, scanner.Err()
 }
 
 func parseTable(rawTable string) [][]string {
