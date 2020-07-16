@@ -96,7 +96,7 @@ func Sberbank(login, pid, from, to string) error {
 			return err
 		}
 
-		ops, err := getOperations(b, parsedDates)
+		ops, err := getOperations(pid, b, parsedDates)
 		if err != nil {
 			return err
 		}
@@ -166,38 +166,69 @@ func findBuyback(table [][]string, si map[string]securitiesInfo) []models.Operat
 	return result
 }
 
-func findPayIn(rt [][]string) []models.Operation {
+func findPayIn(rt [][]string, pid string) []models.Operation {
 	operations := []models.Operation{}
 	for _, row := range rt[1:] {
 		if len(row) != 6 {
 			continue
 		}
-		if row[2] != "Зачисление д/с" {
-			continue
-		}
-		rawTime := fmt.Sprintf("%sT10:00:00+03:00", row[0])
-		time, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
+		ind := strings.Index(row[2], "ISIN")
+		if ind >= 0 {
+			fmt.Println(row[2][ind+5 : ind+17])
 
-		payIn := models.Operation{
-			Currency:      currency.Type(row[3]),
-			Price:         1,
-			Volume:        int64(parseFloat(row[4])),
-			ISIN:          "BBG0013HGFT4",
-			Ticker:        "RUB",
-			DateTime:      time,
-			OperationType: operation.PayIn,
+			rawTime := fmt.Sprintf("%sT10:00:00+03:00", row[0])
+			time, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
+			isin := row[2][ind+5 : ind+17]
+
+			buyback := models.Operation{
+				Currency:      currency.Type(row[3]),
+				Price:         parseFloat(row[4]),
+				Volume:        1,
+				ISIN:          isin,
+				Ticker:        "RUB",
+				DateTime:      time,
+				OperationType: operation.Buyback,
+			}
+
+			s := storage.GetStorage()
+			ops, _ := s.GetOperations(pid, "isin", isin, "", "")
+
+			if len(ops) > 0 {
+				buyback.Ticker = ops[0].Ticker
+			}
+
+			operations = append(operations, buyback)
 		}
-		operations = append(operations, payIn)
+		if row[2] == "Зачисление д/с" {
+			rawTime := fmt.Sprintf("%sT10:00:00+03:00", row[0])
+			time, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
+
+			payIn := models.Operation{
+				Currency:      currency.Type(row[3]),
+				Price:         1,
+				Volume:        int64(parseFloat(row[4])),
+				ISIN:          "BBG0013HGFT4",
+				Ticker:        "RUB",
+				DateTime:      time,
+				OperationType: operation.PayIn,
+			}
+			operations = append(operations, payIn)
+		}
 	}
 	return operations
 }
 
-func getOperations(b []byte, parsedDates map[string]bool) ([]models.Operation, error) {
+func getOperations(pid string, b []byte, parsedDates map[string]bool) ([]models.Operation, error) {
 	reader := bytes.NewReader(b)
 	tables, err := fetchTables(reader, parsedDates)
+
 	if err != nil {
 		return nil, err
 	}
+	if len(tables) == 0 {
+		return []models.Operation{}, nil
+	}
+
 	operations := parseTable(tables[0])
 	securitiesInfo := parseTable(tables[1])
 	movements := parseTable(tables[2])
@@ -282,7 +313,7 @@ func getOperations(b []byte, parsedDates map[string]bool) ([]models.Operation, e
 	}
 
 	if len(movements) > 0 {
-		result = append(result, findPayIn(movements)...)
+		result = append(result, findPayIn(movements, pid)...)
 	}
 
 	if len(buybacks) > 0 {

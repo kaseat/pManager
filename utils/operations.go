@@ -14,7 +14,7 @@ func GetSum(operations []models.Operation) float64 {
 	for _, op := range operations {
 		amount := int64(op.Price*1e6) * op.Volume
 		switch op.OperationType {
-		case operation.PayIn, operation.Sell:
+		case operation.PayIn, operation.Buyback, operation.Sell:
 			sum += amount
 		default:
 			sum -= amount
