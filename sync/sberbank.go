@@ -55,7 +55,7 @@ func Sberbank(login, pid, from, to string) error {
 	}
 
 	query := "from:broker_rep@sberbank.ru subject:report filename:html"
-	if !t.IsZero() {
+	if from == "" && to == "" && !t.IsZero() {
 		query = fmt.Sprintf("%s after:%s", query, t.Format("2006/01/02"))
 	}
 	if from != "" {
@@ -185,7 +185,6 @@ func findPayIn(rt [][]string, pid string) []models.Operation {
 				Price:         parseFloat(row[4]),
 				Volume:        1,
 				ISIN:          isin,
-				Ticker:        "RUB",
 				DateTime:      time,
 				OperationType: operation.Buyback,
 			}

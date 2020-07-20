@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/kaseat/pManager/models"
@@ -80,7 +81,7 @@ func (db Db) AddOperations(portfolioID string, ops []models.Operation) ([]string
 		doc := bson.M{
 			"pid":    pid,
 			"curr":   op.Currency,
-			"price":  int64(op.Price * 1e6),
+			"price":  int64(math.Round(op.Price * 1e6)),
 			"vol":    op.Volume,
 			"ticker": op.Ticker,
 			"time":   op.DateTime,
