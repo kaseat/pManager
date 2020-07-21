@@ -71,7 +71,7 @@ func Sberbank(login, pid, from, to string) error {
 	}
 
 	parsedDates := make(map[string]bool)
-	operations := make(map[models.Operation]bool)
+	operations := make([]models.Operation, 0)
 
 	for _, m := range r.Messages {
 		msg, err := srv.Users.Messages.Get("me", m.Id).Do()
@@ -101,23 +101,14 @@ func Sberbank(login, pid, from, to string) error {
 			return err
 		}
 
-		for _, it := range ops {
-			if !operations[it] {
-				operations[it] = true
-			}
-		}
+		operations = append(operations, ops...)
 
 		fmt.Println("Parse message on", time.Unix(msg.InternalDate/1000, 0), "ok!")
 	}
 
 	if len(operations) != 0 {
-		ops := make([]models.Operation, 0)
-		for it := range operations {
-			ops = append(ops, it)
-		}
-
-		sort.Sort(models.OperationSorter(ops))
-		_, err = s.AddOperations(pid, ops)
+		sort.Sort(models.OperationSorter(operations))
+		_, err = s.AddOperations(pid, operations)
 		if err != nil {
 			return err
 		}
