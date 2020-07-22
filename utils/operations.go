@@ -12,7 +12,7 @@ import (
 func GetSum(operations []models.Operation) float64 {
 	sum := int64(0)
 	for _, op := range operations {
-		amount := int64(op.Price*1e6) * op.Volume
+		amount := int64(math.Round(op.Price*1e6)) * op.Volume
 		switch op.OperationType {
 		case operation.PayIn, operation.Buyback, operation.Sell:
 			sum += amount
@@ -20,7 +20,7 @@ func GetSum(operations []models.Operation) float64 {
 			sum -= amount
 		}
 	}
-	return float64(sum) / 1e6
+	return math.Round(float64(sum)/1e4) / 100
 }
 
 // GetAverage returns average price of given operations
