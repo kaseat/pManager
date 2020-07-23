@@ -8,7 +8,7 @@ import (
 	"github.com/kaseat/pManager/gmail"
 	"github.com/kaseat/pManager/models/currency"
 	"github.com/kaseat/pManager/storage"
-	"github.com/kaseat/pManager/sync"
+	"github.com/kaseat/pManager/sync/sberbank"
 	"github.com/kaseat/pManager/utils"
 )
 
@@ -178,7 +178,7 @@ func SyncOperations(w http.ResponseWriter, r *http.Request) {
 	pid := mux.Vars(r)["id"]
 	login := r.Header.Get("user")
 
-	go sync.Sberbank(login, pid, r.FormValue("from"), r.FormValue("to"))
+	go sberbank.SyncGmail(login, pid, r.FormValue("from"), r.FormValue("to"))
 
 	writeOk(w, commonResponse{Status: "ok"})
 }
