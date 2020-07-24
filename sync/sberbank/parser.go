@@ -32,6 +32,7 @@ func parseReport(r io.Reader) report {
 				result.IsEmpty = true
 				break
 			}
+			result.Date = match[0]
 		}
 		if scanner.Text() == operationsTableMarker {
 			scanner.Scan()

@@ -3,6 +3,7 @@ package sberbank
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -13,8 +14,16 @@ import (
 	"github.com/kaseat/pManager/storage"
 )
 
+var isSync bool = false
+
 // SyncGmail init sberbank report sync
 func SyncGmail(login, pid, from, to string) error {
+	if isSync {
+		return errors.New("Sync already in process")
+	}
+	isSync = true
+	defer func() { isSync = false }()
+
 	cl := gmail.GetClient()
 	srv, err := cl.GetServiceForUser(login)
 	if err != nil {

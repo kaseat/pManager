@@ -126,45 +126,46 @@ func processOperationsTable(table [][]string, si map[ticker]securitiesInfo) []mo
 	return result
 }
 
-func processCashFlowTable(rt [][]string) []models.Operation {
+func processCashFlowTable(table [][]string) []models.Operation {
 	result := []models.Operation{}
-	for _, row := range rt[1:] {
-		if len(row) != 6 {
-			continue
-		}
-		ind := strings.Index(row[2], "ISIN")
-		if ind >= 0 {
-			fmt.Println(row[2][ind+5 : ind+17])
-
-			rawTime := fmt.Sprintf("%sT10:00:00+03:00", row[0])
-			time, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
-			isin := row[2][ind+5 : ind+17]
-
-			buyback := models.Operation{
-				Currency:      currency.Type(row[3]),
-				Price:         parseFloat(row[4]),
-				Volume:        1,
-				ISIN:          isin,
-				DateTime:      time,
-				OperationType: operation.Buyback,
+	if len(table) > 0 {
+		for _, row := range table[1:] {
+			if len(row) != 6 {
+				continue
 			}
-			result = append(result, buyback)
-		}
-		if row[2] == "Зачисление д/с" {
-			rawTime := fmt.Sprintf("%sT10:00:00+03:00", row[0])
-			time, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
+			ind := strings.Index(row[2], "ISIN")
+			if ind >= 0 {
+				rawTime := fmt.Sprintf("%sT10:00:00+03:00", row[0])
+				time, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
+				isin := row[2][ind+5 : ind+17]
 
-			payIn := models.Operation{
-				Currency:      currency.Type(row[3]),
-				Price:         1,
-				Volume:        int64(parseFloat(row[4])),
-				Ticker:        "RUB",
-				DateTime:      time,
-				OperationType: operation.PayIn,
+				buyback := models.Operation{
+					Currency:      currency.Type(row[3]),
+					Price:         parseFloat(row[4]),
+					Volume:        1,
+					ISIN:          isin,
+					DateTime:      time,
+					OperationType: operation.Buyback,
+				}
+				result = append(result, buyback)
 			}
-			result = append(result, payIn)
+			if row[2] == "Зачисление д/с" {
+				rawTime := fmt.Sprintf("%sT10:00:00+03:00", row[0])
+				time, _ := time.Parse("02.01.2006T15:04:05Z07:00", rawTime)
+
+				payIn := models.Operation{
+					Currency:      currency.Type(row[3]),
+					Price:         1,
+					Volume:        int64(parseFloat(row[4])),
+					Ticker:        "RUB",
+					DateTime:      time,
+					OperationType: operation.PayIn,
+				}
+				result = append(result, payIn)
+			}
 		}
 	}
+
 	return result
 }
 
