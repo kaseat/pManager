@@ -21,6 +21,7 @@ type Db struct {
 	portfolios  *mongo.Collection
 	users       *mongo.Collection
 	instruments *mongo.Collection
+	settings    *mongo.Collection
 	context     dbContext
 }
 

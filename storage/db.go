@@ -37,6 +37,16 @@ type Db interface {
 	GetOperations(portfolioID string, key string, value string, from string, to string) ([]models.Operation, error)
 	DeleteOperation(portfolioID string, operationID string) (bool, error)
 	DeleteOperations(portfolioID string) (int64, error)
+
+	AddInstruments(instr []models.Instrument) error
+	GetInstruments(key string, value string) ([]models.Instrument, error)
+	GetAllInstruments() ([]models.Instrument, error)
+	DeleteInstruments(key string, value string) (int64, error)
+	DeleteAllInstruments() (int64, error)
+
+	AddTcsToken(token string) error
+	DeleteTcsToken() error
+	GetTcsToken() string
 }
 
 var db mongo.Db

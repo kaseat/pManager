@@ -10,8 +10,8 @@ import (
 
 // Instrument represents market instrument
 type Instrument struct {
-	FIGI     string          `json:"figi,omitempty" example:"BBG000HLJ7M4"`
-	ISIN     string          `json:"isin,omitempty" example:"US45867G1013"`
+	FIGI     string          `json:"figi" example:"BBG000HLJ7M4"`
+	ISIN     string          `json:"isin" example:"US45867G1013"`
 	Ticker   string          `json:"ticker" example:"IDCC"`
 	Name     string          `json:"name" example:"InterDigItal Inc"`
 	Type     instrument.Type `json:"type" example:"Stock"`
