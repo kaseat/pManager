@@ -4,8 +4,19 @@ import (
 	"time"
 
 	"github.com/kaseat/pManager/models/currency"
+	"github.com/kaseat/pManager/models/instrument"
 	"github.com/kaseat/pManager/models/operation"
 )
+
+// Instrument represents market instrument
+type Instrument struct {
+	FIGI     string          `json:"figi,omitempty" example:"BBG000HLJ7M4"`
+	ISIN     string          `json:"isin,omitempty" example:"US45867G1013"`
+	Ticker   string          `json:"ticker" example:"IDCC"`
+	Name     string          `json:"name" example:"InterDigItal Inc"`
+	Type     instrument.Type `json:"type" example:"Stock"`
+	Currency currency.Type   `json:"currency" example:"USD"`
+}
 
 // Operation represents market operation
 type Operation struct {
