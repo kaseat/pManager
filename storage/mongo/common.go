@@ -24,6 +24,7 @@ func (db *Db) Init(config Config) error {
 	db.operations = client.Database(cfg.DbName).Collection("operations")
 	db.portfolios = client.Database(cfg.DbName).Collection("portfolios")
 	db.users = client.Database(cfg.DbName).Collection("users")
+	db.prices = client.Database(cfg.DbName).Collection("prices")
 	db.instruments = client.Database(cfg.DbName).Collection("instruments")
 	db.settings = client.Database(cfg.DbName).Collection("settings")
 	return nil
