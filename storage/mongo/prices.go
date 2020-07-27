@@ -12,6 +12,10 @@ import (
 
 // AddPrices saves prices series into a storage
 func (db Db) AddPrices(prices []models.Price) error {
+	if prices == nil {
+		return nil
+	}
+
 	docs := make([]interface{}, len(prices))
 	for i, p := range prices {
 		doc := bson.M{
@@ -61,6 +65,8 @@ func (db Db) GetPricesByIsin(isin, from, to string) ([]models.Price, error) {
 	}
 
 	findOptions := options.Find()
+	findOptions.SetSort(bson.M{"time": 1})
+
 	return db.getPrices(filter, findOptions)
 }
 
@@ -97,7 +103,7 @@ func (db Db) getPrices(filter primitive.M, findOptions *options.FindOptions) ([]
 
 	var raw []struct {
 		Price  int64     `bson:"price"`
-		Volume int64     `bson:"vol"`
+		Volume int       `bson:"vol"`
 		Date   time.Time `bson:"time"`
 		ISIN   string    `bson:"isin"`
 	}

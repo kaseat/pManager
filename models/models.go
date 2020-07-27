@@ -11,7 +11,7 @@ import (
 // Price represents price element
 type Price struct {
 	Price  float64   `json:"price" example:"293.61"`
-	Volume int64     `json:"vol" example:"100"`
+	Volume int       `json:"vol" example:"100"`
 	Date   time.Time `json:"time" example:"2020-06-06T15:54:05Z"`
 	ISIN   string    `json:"isin" example:"US9229083632"`
 }
