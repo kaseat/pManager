@@ -18,12 +18,13 @@ type Price struct {
 
 // Instrument represents market instrument
 type Instrument struct {
-	FIGI     string          `json:"figi" example:"BBG000HLJ7M4"`
-	ISIN     string          `json:"isin" example:"US45867G1013"`
-	Ticker   string          `json:"ticker" example:"IDCC"`
-	Name     string          `json:"name" example:"InterDigItal Inc"`
-	Type     instrument.Type `json:"type" example:"Stock"`
-	Currency currency.Type   `json:"currency" example:"USD"`
+	FIGI          string          `json:"figi" example:"BBG000HLJ7M4"`
+	ISIN          string          `json:"isin" example:"US45867G1013"`
+	Ticker        string          `json:"ticker" example:"IDCC"`
+	Name          string          `json:"name" example:"InterDigItal Inc"`
+	Type          instrument.Type `json:"type" example:"Stock"`
+	Currency      currency.Type   `json:"currency" example:"USD"`
+	PriceUptdTime time.Time       `json:"priceUptdTime" example:"2020-06-06T15:54:05Z"`
 }
 
 // Operation represents market operation

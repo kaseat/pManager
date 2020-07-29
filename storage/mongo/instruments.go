@@ -1,6 +1,8 @@
 package mongo
 
 import (
+	"time"
+
 	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/models/currency"
 	"github.com/kaseat/pManager/models/instrument"
@@ -21,6 +23,9 @@ func (db Db) AddInstruments(instr []models.Instrument) error {
 			"curr":   p.Currency,
 			"type":   p.Type,
 		}
+		if !p.PriceUptdTime.IsZero() {
+			doc["lut"] = p.PriceUptdTime
+		}
 		docs[i] = doc
 	}
 
@@ -32,6 +37,78 @@ func (db Db) AddInstruments(instr []models.Instrument) error {
 	}
 
 	return nil
+}
+
+// SetInstrumentPriceUptdTime sets time instrument prise was updated
+func (db Db) SetInstrumentPriceUptdTime(isin string, updTime time.Time) (bool, error) {
+	ctx := db.context()
+	filter := bson.M{"isin": isin}
+	opts := options.Update()
+
+	update := bson.M{
+		"$set": bson.M{
+			"lut": updTime,
+		},
+	}
+
+	u, err := db.instruments.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return false, err
+	}
+
+	if u.ModifiedCount == 1 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// ClearInstrumentPriceUptdTime clears time instrument prise was updated
+func (db Db) ClearInstrumentPriceUptdTime(isin string) (bool, error) {
+	ctx := db.context()
+	filter := bson.M{"isin": isin}
+	opts := options.Update()
+
+	update := bson.M{
+		"$unset": bson.M{
+			"lut": "",
+		},
+	}
+
+	u, err := db.instruments.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return false, err
+	}
+
+	if u.ModifiedCount == 1 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// ClearAllInstrumentPriceUptdTime clears time instrument prise was updated (for all)
+func (db Db) ClearAllInstrumentPriceUptdTime() (bool, error) {
+	ctx := db.context()
+	filter := bson.M{}
+	opts := options.Update()
+
+	update := bson.M{
+		"$unset": bson.M{
+			"lut": "",
+		},
+	}
+
+	u, err := db.instruments.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return false, err
+	}
+
+	if u.ModifiedCount != 0 {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // GetInstruments finds instruments depending on input prameters
@@ -81,12 +158,13 @@ func (db Db) getInstruments(filter primitive.M, findOptions *options.FindOptions
 	}
 
 	var raw []struct {
-		ISIN     string `bson:"isin"`
-		FIGI     string `bson:"figi"`
-		Ticker   string `bson:"ticker"`
-		Name     string `bson:"name"`
-		Currency string `bson:"curr"`
-		Type     string `bson:"type"`
+		ISIN          string    `bson:"isin"`
+		FIGI          string    `bson:"figi"`
+		Ticker        string    `bson:"ticker"`
+		Name          string    `bson:"name"`
+		Currency      string    `bson:"curr"`
+		Type          string    `bson:"type"`
+		PriceUptdTime time.Time `bson:"lut"`
 	}
 
 	err = ins.All(ctx, &raw)
@@ -101,12 +179,13 @@ func (db Db) getInstruments(filter primitive.M, findOptions *options.FindOptions
 
 	for i, item := range raw {
 		data := models.Instrument{
-			ISIN:     item.ISIN,
-			FIGI:     item.FIGI,
-			Ticker:   item.Ticker,
-			Name:     item.Name,
-			Currency: currency.Type(item.Currency),
-			Type:     instrument.Type(item.Type),
+			ISIN:          item.ISIN,
+			FIGI:          item.FIGI,
+			Ticker:        item.Ticker,
+			Name:          item.Name,
+			Currency:      currency.Type(item.Currency),
+			Type:          instrument.Type(item.Type),
+			PriceUptdTime: item.PriceUptdTime,
 		}
 		results[i] = data
 	}

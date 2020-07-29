@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"testing"
+	"time"
 
 	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/models/currency"
@@ -21,6 +22,21 @@ func TestInstrumentStorage(t *testing.T) {
 	} else {
 		t.Errorf("Fail! Expected %v results, got %v", 1, len(ins))
 	}
+
+	testDate := time.Date(2020, 3, 11, 0, 0, 0, 0, time.UTC)
+	db.SetInstrumentPriceUptdTime("RU000A1013Y3", testDate)
+
+	ins, _ = db.GetInstruments("isin", "RU000A1013Y3")
+	if len(ins) == 1 {
+		if ins[0].PriceUptdTime == testDate {
+			t.Logf("Success! Expected %v, got %v", testDate, ins[0].PriceUptdTime)
+		} else {
+			t.Errorf("Fail! Saved and fetched instruments not match! Expected %v, got %v", testDate, ins[0].PriceUptdTime)
+		}
+	} else {
+		t.Errorf("Fail! Expected %v results, got %v", 1, len(ins))
+	}
+
 	dl, _ := db.DeleteInstruments("isin", "RU000A1013Y3")
 	if dl != 1 {
 		t.Errorf("Fail! Expected %v element to be deleted, got %v", 1, dl)
