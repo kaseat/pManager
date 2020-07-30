@@ -37,6 +37,53 @@ func TestInstrumentStorage(t *testing.T) {
 		t.Errorf("Fail! Expected %v results, got %v", 1, len(ins))
 	}
 
+	db.ClearInstrumentPriceUptdTime("RU000A1013Y3")
+
+	ins, _ = db.GetInstruments("isin", "RU000A1013Y3")
+	if len(ins) == 1 {
+		if ins[0].PriceUptdTime.IsZero() {
+			t.Log("Success! Expected zero time")
+		} else {
+			t.Errorf("Fail! Expected zero time, got %v", ins[0].PriceUptdTime)
+		}
+	} else {
+		t.Errorf("Fail! Expected %v results, got %v", 1, len(ins))
+	}
+
+	db.SetInstrumentPriceUptdTime("RU000A1013Y3", testDate)
+	db.SetInstrumentPriceUptdTime("US8552441094", testDate)
+
+	ins, _ = db.GetInstruments("isin", "RU000A1013Y3")
+
+	for _, item := range ins {
+		if item.PriceUptdTime == testDate {
+			t.Logf("Success! Expected %v, got %v", testDate, item.PriceUptdTime)
+		} else {
+			t.Errorf("Fail! Saved and fetched instruments not match! Expected %v, got %v", testDate, item.PriceUptdTime)
+		}
+	}
+
+	db.ClearAllInstrumentPriceUptdTime()
+	ins, _ = db.GetInstruments("isin", "RU000A1013Y3")
+
+	for _, item := range ins {
+		if item.PriceUptdTime.IsZero() {
+			t.Log("Success! Expected zero time")
+		} else {
+			t.Errorf("Fail! Expected zero time, got %v", ins[0].PriceUptdTime)
+		}
+	}
+
+	hasDeleted, _ := db.ClearAllInstrumentPriceUptdTime()
+	if hasDeleted {
+		t.Error("Fail! Expected no elements to be cleares, got some")
+	}
+
+	hasDeleted, _ = db.ClearInstrumentPriceUptdTime("RU000A1013Y3")
+	if hasDeleted {
+		t.Error("Fail! Expected no elements to be cleares, got some")
+	}
+
 	dl, _ := db.DeleteInstruments("isin", "RU000A1013Y3")
 	if dl != 1 {
 		t.Errorf("Fail! Expected %v element to be deleted, got %v", 1, dl)
