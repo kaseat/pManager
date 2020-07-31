@@ -99,7 +99,7 @@ func (db Db) ClearAllInstrumentPriceUptdTime() (bool, error) {
 		},
 	}
 
-	u, err := db.instruments.UpdateOne(ctx, filter, update, opts)
+	u, err := db.instruments.UpdateMany(ctx, filter, update, opts)
 	if err != nil {
 		return false, err
 	}

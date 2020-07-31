@@ -3,8 +3,11 @@ package tcs
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync/atomic"
+	"time"
 
 	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/storage"
@@ -14,12 +17,22 @@ const stocksURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/stocks"
 const bondsURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/bonds"
 const etfURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/etfs"
 
+var lastError error
+var isExecuting int32
+
 // SyncInstruments start sync instruments from tcs API
-func SyncInstruments() error {
+func SyncInstruments() {
+	defer atomic.StoreInt32(&isExecuting, 0)
+	if atomic.LoadInt32(&isExecuting) == 1 {
+		return
+	}
+	atomic.StoreInt32(&isExecuting, 1)
+
 	s := storage.GetStorage()
 	token := s.GetTcsToken()
 	if token == "" {
-		return errors.New("No TCS token found")
+		setLastError(errors.New("No TCS token found"))
+		return
 	}
 	urls := []string{stocksURL, bondsURL, etfURL}
 	instruments := []models.Instrument{}
@@ -36,13 +49,20 @@ func SyncInstruments() error {
 
 	_, err := s.DeleteAllInstruments()
 	if err != nil {
-		return err
+		setLastError(err)
+		return
 	}
 	err = s.AddInstruments(instruments)
 	if err != nil {
-		return err
+		setLastError(err)
+		return
 	}
-	return nil
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success sync instruments")
+}
+
+func setLastError(err error) {
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+	lastError = err
 }
 
 func getInstruments(client *http.Client, token string, url string, c chan []models.Instrument) {
