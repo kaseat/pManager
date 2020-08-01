@@ -182,6 +182,32 @@ paths:
       summary: Get GMail auth url
       tags:
       - user
+  /misc/sync/instruments:
+    get:
+      description: Sync intruments dimension
+      operationId: sync-instruments
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns success status
+          schema:
+            items:
+              $ref: '#/definitions/api.commonResponse'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Sync intruments
+      tags:
+      - misc
   /misc/sync/price:
     get:
       description: Sync prices for given portfolio

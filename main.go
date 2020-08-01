@@ -39,6 +39,7 @@ func main() {
 	misc.HandleFunc("/validate", api.ValidateToken).Methods("GET")
 	misc.HandleFunc("/gmail/url", api.AddGoogleAuth).Methods("GET")
 	misc.HandleFunc("/sync/price", api.SyncPrices).Methods("GET")
+	misc.HandleFunc("/sync/instruments", api.SyncInstruments).Methods("GET")
 
 	portfolios := router.PathPrefix("/api/portfolios").Subrouter().StrictSlash(true)
 	portfolios.Use(api.VerifyTokenMiddleware)
