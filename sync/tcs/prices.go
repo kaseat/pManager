@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sync/atomic"
 	"time"
 
 	"github.com/kaseat/pManager/models"
@@ -14,27 +15,47 @@ import (
 
 const candlesURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/candles"
 
+var lastSyncPricesError atomic.Value
+var syncPricesIsRunning int32
+
 // SyncPrices sync daily prices for instruments
 func SyncPrices() {
+	defer atomic.StoreInt32(&syncPricesIsRunning, 0)
+	if atomic.LoadInt32(&syncPricesIsRunning) == 1 {
+		return
+	}
+	atomic.StoreInt32(&syncPricesIsRunning, 1)
+
 	s := storage.GetStorage()
 	token := s.GetTcsToken()
 	instruments, _ := s.GetAllInstruments()
 	client := &http.Client{}
 
 	for _, x := range instruments {
-		beginDate := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
+		beginDate := x.PriceUptdTime
+		if beginDate.IsZero() {
+			beginDate = time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
+		}
+
 		endDate := today()
 		chunks := getTimeChunks(beginDate, endDate, 12)
 		for _, ch := range chunks {
+			if ch.From == ch.To {
+				break
+			}
 			time.Sleep(500 * time.Millisecond)
+			now := time.Now().Format("2006-02-01 15:04:05")
+			from := ch.From.Format("2006-01-02")
+			to := ch.To.Format("2006-01-02")
 			if err := s.AddPrices(getPrices(client, token, x, ch.From, ch.To)); err != nil {
-				fmt.Printf("Sync price for %s from %s to %s error: %v\n", x.Ticker, ch.From.Format("2006-01-02"), ch.To.Format("2006-01-02"), err)
+				fmt.Printf("%s Sync price for %s from %s to %s error: %v\n", now, x.Ticker, from, to, err)
 			} else {
-				fmt.Printf("Sync price for %s from %s to %s succeded\n", x.Ticker, ch.From.Format("2006-01-02"), ch.To.Format("2006-01-02"))
+				s.SetInstrumentPriceUptdTime(x.ISIN, ch.To)
+				fmt.Printf("%s Sync price for %s from %s to %s succeded\n", now, x.Ticker, from, to)
 			}
 		}
 	}
-
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success sync prices")
 }
 
 func getPrices(client *http.Client, token string, ins models.Instrument, from, to time.Time) []models.Price {
@@ -50,6 +71,7 @@ func getPrices(client *http.Client, token string, ins models.Instrument, from, t
 
 	req, err := http.NewRequest("GET", candlesURL, nil)
 	if err != nil {
+		setLastError(err)
 		return nil
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
@@ -62,15 +84,18 @@ func getPrices(client *http.Client, token string, ins models.Instrument, from, t
 
 	resp, err := client.Do(req)
 	if err != nil {
+		setLastError(err)
 		return nil
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		setLastError(err)
 		return nil
 	}
 	err = json.Unmarshal(body, &respObj)
 	if err != nil {
+		setLastError(err)
 		return nil
 	}
 
@@ -85,28 +110,4 @@ func getPrices(client *http.Client, token string, ins models.Instrument, from, t
 	}
 
 	return result
-}
-
-func today() time.Time {
-	year, month, day := time.Now().Date()
-	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
-}
-
-func getTimeChunks(from, to time.Time, size int) []chunk {
-	result := []chunk{}
-	for {
-		end := from.AddDate(0, size, 0)
-		if to.Before(end) {
-			result = append(result, chunk{From: from, To: to})
-			break
-		}
-		result = append(result, chunk{From: from, To: end})
-		from = end.AddDate(0, 0, 1)
-	}
-	return result
-}
-
-type chunk struct {
-	From time.Time
-	To   time.Time
 }

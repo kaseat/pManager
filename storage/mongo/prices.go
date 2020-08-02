@@ -15,6 +15,9 @@ func (db Db) AddPrices(prices []models.Price) error {
 	if prices == nil {
 		return nil
 	}
+	if len(prices) == 0 {
+		return nil
+	}
 
 	docs := make([]interface{}, len(prices))
 	for i, p := range prices {

@@ -17,7 +17,7 @@ const stocksURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/stocks"
 const bondsURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/bonds"
 const etfURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/etfs"
 
-var lastSyncIstrumentsError error
+var lastSyncIstrumentsError atomic.Value
 var syncInstrumentsIsRunning int32
 
 // SyncInstruments start sync instruments from tcs API
@@ -64,18 +64,17 @@ func SyncInstruments() {
 func GetSyncInstrumentsStatus() SyncStatus {
 	if atomic.LoadInt32(&syncInstrumentsIsRunning) == 1 {
 		return SyncStatus{Status: Processing}
-	} else if lastSyncIstrumentsError != nil {
-		resp := SyncStatus{Status: Err, Error: lastSyncIstrumentsError}
-		lastSyncIstrumentsError = nil
-		return resp
-	} else {
-		return SyncStatus{Status: Ok}
 	}
-}
-
-func setLastError(err error) {
-	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
-	lastSyncIstrumentsError = err
+	err := lastSyncIstrumentsError.Load()
+	if err != nil {
+		se := err.(syncError)
+		if se.IsNotEmpty {
+			resp := SyncStatus{Status: Err, Error: se.Error}
+			lastSyncIstrumentsError.Store(syncError{Error: nil, IsNotEmpty: false})
+			return resp
+		}
+	}
+	return SyncStatus{Status: Ok}
 }
 
 func getInstruments(client *http.Client, token string, url string, c chan []models.Instrument) {
