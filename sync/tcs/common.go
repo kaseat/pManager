@@ -1,7 +1,6 @@
 package tcs
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -32,11 +31,6 @@ const (
 	// Processing shows that sync is in process
 	Processing Status = "Processing"
 )
-
-func setLastError(err error) {
-	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
-	lastSyncIstrumentsError.Store(syncError{Error: err, IsNotEmpty: true})
-}
 
 func today() time.Time {
 	year, month, day := time.Now().Date()

@@ -71,7 +71,7 @@ func getPrices(client *http.Client, token string, ins models.Instrument, from, t
 
 	req, err := http.NewRequest("GET", candlesURL, nil)
 	if err != nil {
-		setLastError(err)
+		setLastPricesError(err)
 		return nil
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
@@ -84,18 +84,18 @@ func getPrices(client *http.Client, token string, ins models.Instrument, from, t
 
 	resp, err := client.Do(req)
 	if err != nil {
-		setLastError(err)
+		setLastPricesError(err)
 		return nil
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		setLastError(err)
+		setLastPricesError(err)
 		return nil
 	}
 	err = json.Unmarshal(body, &respObj)
 	if err != nil {
-		setLastError(err)
+		setLastPricesError(err)
 		return nil
 	}
 
@@ -110,4 +110,9 @@ func getPrices(client *http.Client, token string, ins models.Instrument, from, t
 	}
 
 	return result
+}
+
+func setLastPricesError(err error) {
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+	lastSyncPricesError.Store(syncError{Error: err, IsNotEmpty: true})
 }

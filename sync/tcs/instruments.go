@@ -31,7 +31,7 @@ func SyncInstruments() {
 	s := storage.GetStorage()
 	token := s.GetTcsToken()
 	if token == "" {
-		setLastError(errors.New("No TCS token found"))
+		setLastInstrumentError(errors.New("No TCS token found"))
 		return
 	}
 	urls := []string{stocksURL, bondsURL, etfURL}
@@ -49,12 +49,12 @@ func SyncInstruments() {
 
 	_, err := s.DeleteAllInstruments()
 	if err != nil {
-		setLastError(err)
+		setLastInstrumentError(err)
 		return
 	}
 	err = s.AddInstruments(instruments)
 	if err != nil {
-		setLastError(err)
+		setLastInstrumentError(err)
 		return
 	}
 	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success sync instruments")
@@ -75,6 +75,11 @@ func GetSyncInstrumentsStatus() SyncStatus {
 		}
 	}
 	return SyncStatus{Status: Ok}
+}
+
+func setLastInstrumentError(err error) {
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+	lastSyncIstrumentsError.Store(syncError{Error: err, IsNotEmpty: true})
 }
 
 func getInstruments(client *http.Client, token string, url string, c chan []models.Instrument) {
