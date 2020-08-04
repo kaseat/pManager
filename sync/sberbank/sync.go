@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/kaseat/pManager/gmail"
@@ -14,15 +15,15 @@ import (
 	"github.com/kaseat/pManager/storage"
 )
 
-var isSync bool = false
+var isSync int32
 
 // SyncGmail init sberbank report sync
 func SyncGmail(login, pid, from, to string) error {
-	if isSync {
+	defer atomic.StoreInt32(&isSync, 0)
+	if atomic.LoadInt32(&isSync) == 1 {
 		return errors.New("Sync already in process")
 	}
-	isSync = true
-	defer func() { isSync = false }()
+	atomic.StoreInt32(&isSync, 1)
 
 	cl := gmail.GetClient()
 	srv, err := cl.GetServiceForUser(login)
@@ -94,7 +95,7 @@ func SyncGmail(login, pid, from, to string) error {
 				}
 			}
 		}
-		fmt.Println("Parse message on", time.Unix(msg.InternalDate/1000, 0), "ok!")
+		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Parse message on", time.Unix(msg.InternalDate/1000, 0), "ok!")
 	}
 
 	if len(operations) != 0 {
@@ -103,7 +104,7 @@ func SyncGmail(login, pid, from, to string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("save opertions for", login, "to storge OK")
+		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "save opertions for", login, "to storge OK")
 	}
 
 	err = s.AddUserLastUpdateTime(login, "sberbank", time.Now())
