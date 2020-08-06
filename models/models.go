@@ -16,6 +16,14 @@ type Price struct {
 	ISIN   string    `json:"isin" example:"US9229083632"`
 }
 
+// Share represents share
+type Share struct {
+	ISIN   string    `json:"isin" example:"US9229083632"`
+	Price  float64   `json:"price" example:"293.61"`
+	Volume int64     `json:"vol" example:"100"`
+	Date   time.Time `json:"time" example:"2020-06-06T15:54:05Z"`
+}
+
 // Instrument represents market instrument
 type Instrument struct {
 	FIGI          string          `json:"figi" example:"BBG000HLJ7M4"`
