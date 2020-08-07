@@ -79,7 +79,7 @@ func CreateSingleOperation(w http.ResponseWriter, r *http.Request) {
 // @id operation-get-all
 // @produce json
 // @param id path string true "Portfolio Id"
-// @param figi query string false "Filter by FIGI"
+// @param ticker query string false "Filter by ticker"
 // @param from query string false "Filter operations from this date"
 // @param to query string false "Filter operations till this date"
 // @success 200 {array} models.Operation "Returns operations info"
@@ -120,7 +120,7 @@ func ReadOperations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ops, err := s.GetOperations(pid, "figi", r.FormValue("figi"), r.FormValue("from"), r.FormValue("to"))
+	ops, err := s.GetOperations(pid, "ticker", r.FormValue("ticker"), r.FormValue("from"), r.FormValue("to"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return

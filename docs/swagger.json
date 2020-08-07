@@ -557,8 +557,8 @@
                     },
                     {
                         "type": "string",
-                        "description": "Filter by FIGI",
-                        "name": "figi",
+                        "description": "Filter by ticker",
+                        "name": "ticker",
                         "in": "query"
                     },
                     {
