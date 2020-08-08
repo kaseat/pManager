@@ -18,23 +18,27 @@ import (
 var isSync int32
 
 // SyncGmail init sberbank report sync
-func SyncGmail(login, pid, from, to string) error {
+func SyncGmail(login, pid, from, to string) {
 	defer atomic.StoreInt32(&isSync, 0)
 	if atomic.LoadInt32(&isSync) == 1 {
-		return errors.New("Sync already in process")
+		err := errors.New("Sync already in process")
+		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+		return
 	}
 	atomic.StoreInt32(&isSync, 1)
-
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Begin sync sberbank operations via Gmail")
 	cl := gmail.GetClient()
 	srv, err := cl.GetServiceForUser(login)
 	if err != nil {
-		return err
+		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+		return
 	}
 
 	s := storage.GetStorage()
 	t, err := s.GetUserLastUpdateTime(login, "sberbank")
 	if err != nil {
-		return err
+		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+		return
 	}
 
 	query := "from:broker_rep@sberbank.ru subject:report filename:html"
@@ -50,7 +54,8 @@ func SyncGmail(login, pid, from, to string) error {
 
 	r, err := srv.Users.Messages.List("me").Q(query).Do()
 	if err != nil {
-		return err
+		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+		return
 	}
 
 	parsedDates := make(map[string]bool)
@@ -60,7 +65,8 @@ func SyncGmail(login, pid, from, to string) error {
 		msg, err := srv.Users.Messages.Get("me", m.Id).Do()
 
 		if err != nil {
-			return err
+			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+			return
 		}
 		attachmentID := ""
 		for _, p := range msg.Payload.Parts {
@@ -71,12 +77,14 @@ func SyncGmail(login, pid, from, to string) error {
 
 		att, err := srv.Users.Messages.Attachments.Get("me", m.Id, attachmentID).Do()
 		if err != nil {
-			return err
+			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+			return
 		}
 
 		b, err := base64.URLEncoding.DecodeString(att.Data)
 		if err != nil {
-			return err
+			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+			return
 		}
 
 		reader := bytes.NewReader(b)
@@ -102,14 +110,16 @@ func SyncGmail(login, pid, from, to string) error {
 		sort.Sort(models.OperationSorter(operations))
 		_, err = s.AddOperations(pid, operations)
 		if err != nil {
-			return err
+			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+			return
 		}
 		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "save opertions for", login, "to storge OK")
 	}
 
 	err = s.AddUserLastUpdateTime(login, "sberbank", time.Now())
 	if err != nil {
-		return err
+		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+		return
 	}
-	return nil
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success sync sberbank operations via Gmail")
 }
