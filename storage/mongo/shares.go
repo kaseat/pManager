@@ -34,9 +34,19 @@ func (db Db) GetShares(pid string, onDate string) ([]models.Share, error) {
 			}
 		}
 	}
+
+	instr, err := db.GetAllInstruments()
+	if err != nil {
+		return nil, err
+	}
+	instrMap := make(map[string]models.Instrument)
+	for _, ins := range instr {
+		instrMap[ins.ISIN] = ins
+	}
 	result := []models.Share{}
 	for _, sh := range shares {
 		if sh.ISIN != "" && sh.Volume != 0 {
+			sh.Ticker = instrMap[sh.ISIN].Ticker
 			result = append(result, sh)
 		}
 	}
