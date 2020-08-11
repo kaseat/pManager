@@ -200,25 +200,3 @@ func SyncPrices(w http.ResponseWriter, r *http.Request) {
 	go tcs.SyncPrices()
 	writeOk(w, commonResponse{Status: "ok"})
 }
-
-// SyncInstruments sync instruments
-// @summary Sync intruments
-// @description Sync intruments dimension
-// @id sync-instruments
-// @produce json
-// @success 200 {array} commonResponse "Returns success status"
-// @failure 400 {object} errorResponse "Returns when any processing error occurs"
-// @failure 401 {object} errorResponse "Returns when authentication error occurs"
-// @tags misc
-// @security ApiKeyAuth
-// @router /misc/sync/instruments [get]
-func SyncInstruments(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	stat := tcs.GetSyncInstrumentsStatus()
-	if stat.Status != tcs.Processing {
-		go tcs.SyncInstruments()
-		writeOk(w, commonResponse{Status: "ok"})
-	} else {
-		writeError(w, http.StatusBadRequest, "Sync already in process")
-	}
-}

@@ -103,6 +103,30 @@ definitions:
       token:
         type: string
     type: object
+  models.Instrument:
+    properties:
+      currency:
+        example: USD
+        type: string
+      figi:
+        example: BBG000HLJ7M4
+        type: string
+      isin:
+        example: US45867G1013
+        type: string
+      name:
+        example: InterDigItal Inc
+        type: string
+      priceUptdTime:
+        example: "2020-06-06T15:54:05Z"
+        type: string
+      ticker:
+        example: IDCC
+        type: string
+      type:
+        example: Stock
+        type: string
+    type: object
   models.Operation:
     properties:
       currency:
@@ -182,32 +206,6 @@ paths:
       summary: Get GMail auth url
       tags:
       - user
-  /misc/sync/instruments:
-    get:
-      description: Sync intruments dimension
-      operationId: sync-instruments
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Returns success status
-          schema:
-            items:
-              $ref: '#/definitions/api.commonResponse'
-            type: array
-        "400":
-          description: Returns when any processing error occurs
-          schema:
-            $ref: '#/definitions/api.errorResponse'
-        "401":
-          description: Returns when authentication error occurs
-          schema:
-            $ref: '#/definitions/api.errorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Sync intruments
-      tags:
-      - misc
   /misc/sync/price:
     get:
       description: Sync prices for given portfolio
@@ -641,6 +639,105 @@ paths:
       summary: Sync operations
       tags:
       - misc
+  /securities:
+    get:
+      description: Gets securities avaliable
+      operationId: get-securities
+      parameters:
+      - default: none
+        description: Filter by
+        enum:
+        - none
+        - ticker
+        - isin
+        - figi
+        in: query
+        name: filter
+        type: string
+      - description: Filter value
+        in: query
+        name: by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns success status
+          schema:
+            items:
+              $ref: '#/definitions/models.Instrument'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get securities
+      tags:
+      - securities
+    post:
+      description: Adds securities
+      operationId: add-securities
+      parameters:
+      - description: Instrument info
+        in: body
+        name: instrument
+        required: true
+        schema:
+          $ref: '#/definitions/models.Instrument'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns success status
+          schema:
+            items:
+              $ref: '#/definitions/models.Instrument'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Add securities
+      tags:
+      - securities
+  /securities/sync:
+    get:
+      description: Sync intruments dimension
+      operationId: sync-securities
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns success status
+          schema:
+            items:
+              $ref: '#/definitions/api.commonResponse'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Sync securities
+      tags:
+      - securities
   /token/validate:
     get:
       description: get string by ID

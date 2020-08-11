@@ -1,12 +1,15 @@
 package instrument
 
+// Type represents instrument type
 type Type string
 
 const (
-	// Stock
+	// Stock represents stocks
 	Stock Type = "Stock"
-	// Bond
+	// Bond represents bonds
 	Bond Type = "Bond"
-	// Etf
+	// Etf represents ETF
 	Etf Type = "Etf"
+	// Currency represents currency
+	Currency Type = "Currency"
 )

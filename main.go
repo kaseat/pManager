@@ -39,7 +39,12 @@ func main() {
 	misc.HandleFunc("/validate", api.ValidateToken).Methods("GET")
 	misc.HandleFunc("/gmail/url", api.AddGoogleAuth).Methods("GET")
 	misc.HandleFunc("/sync/price", api.SyncPrices).Methods("GET")
-	misc.HandleFunc("/sync/instruments", api.SyncInstruments).Methods("GET")
+
+	securities := router.PathPrefix("/api/securities").Subrouter().StrictSlash(true)
+	securities.Use(api.VerifyTokenMiddleware)
+	securities.HandleFunc("", api.GetSecurities).Methods("GET")
+	securities.HandleFunc("", api.AddSecurities).Methods("POST")
+	securities.HandleFunc("/sync", api.SyncSecurities).Methods("GET")
 
 	portfolios := router.PathPrefix("/api/portfolios").Subrouter().StrictSlash(true)
 	portfolios.Use(api.VerifyTokenMiddleware)
