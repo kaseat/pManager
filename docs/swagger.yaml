@@ -206,32 +206,6 @@ paths:
       summary: Get GMail auth url
       tags:
       - user
-  /misc/sync/price:
-    get:
-      description: Sync prices for given portfolio
-      operationId: sync-price
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Returns success status
-          schema:
-            items:
-              $ref: '#/definitions/api.commonResponse'
-            type: array
-        "400":
-          description: Returns when any processing error occurs
-          schema:
-            $ref: '#/definitions/api.errorResponse'
-        "401":
-          description: Returns when authentication error occurs
-          schema:
-            $ref: '#/definitions/api.errorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Sync prices
-      tags:
-      - misc
   /portfolios:
     delete:
       description: Deletes all portfolios an all associated operations
@@ -639,6 +613,67 @@ paths:
       summary: Sync operations
       tags:
       - misc
+  /prices:
+    get:
+      description: Sync prices
+      operationId: sync-price
+      parameters:
+      - description: Filter prices from this date
+        in: query
+        name: from
+        type: string
+      - description: Filter prices till this date
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns success status
+          schema:
+            items:
+              $ref: '#/definitions/api.commonResponse'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get prices
+      tags:
+      - prices
+  /prices/sync:
+    get:
+      description: Sync prices
+      operationId: sync-price
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns success status
+          schema:
+            items:
+              $ref: '#/definitions/api.commonResponse'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Sync prices
+      tags:
+      - prices
   /securities:
     get:
       description: Gets securities avaliable

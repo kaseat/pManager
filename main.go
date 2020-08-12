@@ -46,6 +46,11 @@ func main() {
 	securities.HandleFunc("", api.AddSecurities).Methods("POST")
 	securities.HandleFunc("/sync", api.SyncSecurities).Methods("GET")
 
+	prices := router.PathPrefix("/api/prices").Subrouter().StrictSlash(true)
+	prices.Use(api.VerifyTokenMiddleware)
+	prices.HandleFunc("", api.GetPrices).Methods("GET")
+	prices.HandleFunc("/sync", api.SyncPrices).Methods("GET")
+
 	portfolios := router.PathPrefix("/api/portfolios").Subrouter().StrictSlash(true)
 	portfolios.Use(api.VerifyTokenMiddleware)
 	portfolios.HandleFunc("", api.CreateSinglePortfolio).Methods("POST")

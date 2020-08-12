@@ -9,7 +9,6 @@ import (
 	"github.com/kaseat/pManager/models/currency"
 	"github.com/kaseat/pManager/storage"
 	"github.com/kaseat/pManager/sync/sberbank"
-	"github.com/kaseat/pManager/sync/tcs"
 	"github.com/kaseat/pManager/utils"
 )
 
@@ -181,22 +180,5 @@ func SyncOperations(w http.ResponseWriter, r *http.Request) {
 
 	go sberbank.SyncGmail(login, pid, r.FormValue("from"), r.FormValue("to"))
 
-	writeOk(w, commonResponse{Status: "ok"})
-}
-
-// SyncPrices sync prices
-// @summary Sync prices
-// @description Sync prices for given portfolio
-// @id sync-price
-// @produce json
-// @success 200 {array} commonResponse "Returns success status"
-// @failure 400 {object} errorResponse "Returns when any processing error occurs"
-// @failure 401 {object} errorResponse "Returns when authentication error occurs"
-// @tags misc
-// @security ApiKeyAuth
-// @router /misc/sync/price [get]
-func SyncPrices(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	go tcs.SyncPrices()
 	writeOk(w, commonResponse{Status: "ok"})
 }
