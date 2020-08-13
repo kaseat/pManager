@@ -24,11 +24,12 @@ func SyncPrices(w http.ResponseWriter, r *http.Request) {
 	writeOk(w, commonResponse{Status: "ok"})
 }
 
-// GetPrices sync prices
+// GetPrices gets prices
 // @summary Get prices
-// @description Sync prices
-// @id sync-price
+// @description Get prices
+// @id get-price
 // @produce json
+// @param isin query string false "ISIN"
 // @param from query string false "Filter prices from this date"
 // @param to query string false "Filter prices till this date"
 // @success 200 {array} commonResponse "Returns success status"

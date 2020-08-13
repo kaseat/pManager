@@ -691,7 +691,7 @@
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Sync prices",
+                "description": "Get prices",
                 "produces": [
                     "application/json"
                 ],
@@ -699,8 +699,14 @@
                     "prices"
                 ],
                 "summary": "Get prices",
-                "operationId": "sync-price",
+                "operationId": "get-price",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ISIN",
+                        "name": "isin",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Filter prices from this date",

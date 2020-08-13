@@ -615,9 +615,13 @@ paths:
       - misc
   /prices:
     get:
-      description: Sync prices
-      operationId: sync-price
+      description: Get prices
+      operationId: get-price
       parameters:
+      - description: ISIN
+        in: query
+        name: isin
+        type: string
       - description: Filter prices from this date
         in: query
         name: from
