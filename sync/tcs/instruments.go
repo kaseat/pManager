@@ -16,6 +16,7 @@ import (
 const stocksURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/stocks"
 const bondsURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/bonds"
 const etfURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/etfs"
+const currURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/currencies"
 
 var lastSyncIstrumentsError atomic.Value
 var syncInstrumentsIsRunning int32
@@ -34,7 +35,7 @@ func SyncInstruments() {
 		setLastInstrumentError(errors.New("No TCS token found"))
 		return
 	}
-	urls := []string{stocksURL, bondsURL, etfURL}
+	urls := []string{stocksURL, bondsURL, etfURL, currURL}
 	instruments := []models.Instrument{}
 	client := &http.Client{}
 	channel := make(chan []models.Instrument)
@@ -47,17 +48,30 @@ func SyncInstruments() {
 		instruments = append(instruments, <-channel...)
 	}
 
-	_, err := s.DeleteAllInstruments()
+	instr, err := s.GetAllInstruments()
 	if err != nil {
 		setLastInstrumentError(err)
 		return
 	}
-	err = s.AddInstruments(instruments)
+	instrMap := make(map[string]models.Instrument)
+	for _, ins := range instr {
+		instrMap[ins.FIGI] = ins
+	}
+	instrToAdd := []models.Instrument{}
+	for _, ins := range instruments {
+		if _, ok := instrMap[ins.FIGI]; !ok {
+			if ins.ISIN == "" {
+				ins.ISIN = ins.FIGI
+			}
+			instrToAdd = append(instrToAdd, ins)
+		}
+	}
+	err = s.AddInstruments(instrToAdd)
 	if err != nil {
 		setLastInstrumentError(err)
 		return
 	}
-	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success sync instruments")
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success sync instruments. Added", len(instrToAdd))
 }
 
 // GetSyncInstrumentsStatus gets status of instruments sync
