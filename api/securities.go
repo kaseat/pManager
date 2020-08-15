@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/storage"
 	"github.com/kaseat/pManager/sync/tcs"
@@ -97,4 +98,57 @@ func AddSecurities(w http.ResponseWriter, r *http.Request) {
 	} else {
 		writeOk(w, commonResponse{Status: "ok"})
 	}
+}
+
+// GetSecuritiesForPortfolio gets securities for given portfolio
+// @summary Get securities for given portfolio
+// @description Gets portfolio info by Id
+// @id get-by-portfolio-securities
+// @produce json
+// @param id path string true "Portfolio Id"
+// @param on query string false "Get securities on this date"
+// @success 200 {object} models.Portfolio "Returns portfolio info if any"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags securities
+// @security ApiKeyAuth
+// @router /portfolios/{id}/securities [get]
+func GetSecuritiesForPortfolio(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	pid := mux.Vars(r)["id"]
+	user := r.Header.Get("user")
+
+	s := storage.GetStorage()
+	u, err := s.GetUserByLogin(user)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ps, err := s.GetPortfolios(u.UserID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	canRead := false
+	for _, p := range ps {
+		if p.PortfolioID == pid {
+			canRead = true
+			break
+		}
+	}
+
+	if !canRead {
+		writeError(w, http.StatusUnauthorized, "You cannot read securities for this portfolio")
+		return
+	}
+
+	ops, err := s.GetShares(pid, r.FormValue("on"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeOk(w, ops)
 }

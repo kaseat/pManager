@@ -53,6 +53,8 @@ type Db interface {
 	DeletePrices(key string, value string) (int64, error)
 	DeleteAllPrices() (int64, error)
 
+	GetShares(pid string, onDate string) ([]models.Share, error)
+
 	AddTcsToken(token string) error
 	DeleteTcsToken() error
 	GetTcsToken() string

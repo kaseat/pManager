@@ -62,6 +62,7 @@ func main() {
 	portfolios.HandleFunc("/{id}/operations", api.ReadOperations).Methods("GET")
 	portfolios.HandleFunc("/{id}/operations", api.CreateSingleOperation).Methods("POST")
 	portfolios.HandleFunc("/{id}/operations", api.DeleteAllOperations).Methods("DELETE")
+	portfolios.HandleFunc("/{id}/securities", api.GetSecuritiesForPortfolio).Methods("GET")
 	portfolios.HandleFunc("/{id}/average", api.GetAveragePrice).Methods("GET")
 	portfolios.HandleFunc("/{id}/balance", api.GetBalance).Methods("GET")
 	portfolios.HandleFunc("/{id}/sync", api.SyncOperations).Methods("GET")

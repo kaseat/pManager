@@ -622,6 +622,59 @@
                 }
             }
         },
+        "/portfolios/{id}/securities": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Gets portfolio info by Id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "securities"
+                ],
+                "summary": "Get securities for given portfolio",
+                "operationId": "get-by-portfolio-securities",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Portfolio Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Get securities on this date",
+                        "name": "on",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns portfolio info if any",
+                        "schema": {
+                            "$ref": "#/definitions/models.Portfolio"
+                        }
+                    },
+                    "400": {
+                        "description": "Returns when any processing error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Returns when authentication error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/portfolios/{id}/sync": {
             "get": {
                 "security": [

@@ -18,7 +18,8 @@ type Price struct {
 
 // Share represents share
 type Share struct {
-	ISIN   string    `json:"isin" example:"US9229083632"`
+	ISIN   string    `json:"isin" example:"US45867G1013"`
+	Ticker string    `json:"ticker" example:"IDCC"`
 	Price  float64   `json:"price" example:"293.61"`
 	Volume int64     `json:"vol" example:"100"`
 	Date   time.Time `json:"time" example:"2020-06-06T15:54:05Z"`
@@ -26,13 +27,13 @@ type Share struct {
 
 // Instrument represents market instrument
 type Instrument struct {
-	FIGI          string          `json:"figi" example:"BBG000HLJ7M4"`
-	ISIN          string          `json:"isin" example:"US45867G1013"`
-	Ticker        string          `json:"ticker" example:"IDCC"`
+	FIGI          string          `json:"figi,omitempty" example:"BBG000HLJ7M4"`
+	ISIN          string          `json:"isin,omitempty" example:"US45867G1013"`
+	Ticker        string          `json:"ticker,omitempty" example:"IDCC"`
 	Name          string          `json:"name" example:"InterDigItal Inc"`
 	Type          instrument.Type `json:"type" example:"Stock"`
 	Currency      currency.Type   `json:"currency" example:"USD"`
-	PriceUptdTime time.Time       `json:"priceUptdTime" example:"2020-06-06T15:54:05Z"`
+	PriceUptdTime time.Time       `json:"priceUptdTime,omitempty" example:"2020-06-06T15:54:05Z"`
 }
 
 // Operation represents market operation
@@ -59,9 +60,10 @@ type Portfolio struct {
 
 // User represents user
 type User struct {
-	UserID string `json:"id" example:"5edb2a0e550dfc5f16392838"`
-	Login  string `json:"login" example:"mark123"`
-	Email  string `json:"email" example:"mark123@abc.com"`
+	UserID  string `json:"id" example:"5edb2a0e550dfc5f16392838"`
+	Login   string `json:"login" example:"mark123"`
+	Email   string `json:"email" example:"mark123@abc.com"`
+	IsAdmin bool   `json:"isAdmin" example:"false"`
 }
 
 // OperationSorter sorts operations by time.
