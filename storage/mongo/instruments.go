@@ -13,11 +13,12 @@ import (
 
 // AddInstruments saves instruments info into a storage
 func (db Db) AddInstruments(instr []models.Instrument) error {
+	if len(instr) == 0 {
+		return nil
+	}
 	docs := make([]interface{}, len(instr))
 	for i, p := range instr {
 		doc := bson.M{
-			"isin":   p.ISIN,
-			"figi":   p.FIGI,
 			"ticker": p.Ticker,
 			"name":   p.Name,
 			"curr":   p.Currency,
@@ -25,6 +26,12 @@ func (db Db) AddInstruments(instr []models.Instrument) error {
 		}
 		if !p.PriceUptdTime.IsZero() {
 			doc["lut"] = p.PriceUptdTime
+		}
+		if p.ISIN != "" {
+			doc["isin"] = p.ISIN
+		}
+		if p.FIGI != "" {
+			doc["figi"] = p.FIGI
 		}
 		docs[i] = doc
 	}
