@@ -1,95 +1,145 @@
 package mongo
 
 import (
-	"sort"
+	"fmt"
 	"time"
 
 	"github.com/kaseat/pManager/models"
-	"github.com/kaseat/pManager/models/operation"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // GetShares gets shares
 func (db Db) GetShares(pid string, onDate string) ([]models.Share, error) {
-	ops, err := db.GetOperations(pid, "", "", "", onDate)
+	p, err := primitive.ObjectIDFromHex(pid)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Could not decode portfolio Id (%s). Internal error : %s", pid, err)
 	}
-	shares := make(map[string]models.Share)
-	for _, op := range ops {
-		if i, ok := shares[op.ISIN]; ok {
-			if op.OperationType == operation.Buy {
-				i.Volume += op.Volume
-				shares[op.ISIN] = i
-			}
-			if op.OperationType == operation.Sell || op.OperationType == operation.Buyback {
-				i.Volume -= op.Volume
-				shares[op.ISIN] = i
-			}
-		} else {
-			shares[op.ISIN] = models.Share{
-				ISIN:   op.ISIN,
-				Volume: op.Volume,
-			}
-		}
+	dtime := time.Now()
+	if t, err := time.Parse("2006-01-02T15:04:05Z07:00", onDate); err == nil {
+		dtime = t
 	}
 
-	instr, err := db.GetAllInstruments()
+	matchStage := bson.D{{Key: "$match", Value: bson.D{
+		{Key: "pid", Value: p},
+		{Key: "time", Value: bson.M{"$lte": dtime}},
+	}}}
+	projectStage := bson.D{{Key: "$project", Value: bson.D{
+		{Key: "isin", Value: true},
+		{Key: "vol", Value: bson.M{
+			"$switch": bson.D{
+				{Key: "branches", Value: []bson.D{
+					{{Key: "case", Value: bson.M{"$in": []interface{}{"$type", []string{"buyback", "sell"}}}},
+						{Key: "then", Value: bson.M{"$multiply": []interface{}{"$vol", -1}}}},
+					{{Key: "case", Value: bson.M{"$eq": []string{"$type", "buy"}}},
+						{Key: "then", Value: "$vol"}},
+				}},
+				{Key: "default", Value: 0},
+			},
+		}},
+		{Key: "price", Value: bson.M{
+			"$switch": bson.D{
+				{Key: "branches", Value: []bson.D{
+					{{Key: "case", Value: bson.M{"$in": []interface{}{"$type", []string{"buyback", "payIn", "accruedInterestSell", "sell"}}}},
+						{Key: "then", Value: bson.M{"$multiply": []string{"$vol", "$price"}}}},
+					{{Key: "case", Value: bson.M{"$not": bson.M{"$in": []interface{}{"$type", []string{"buyback", "payIn", "accruedInterestSell", "sell"}}}}},
+						{Key: "then", Value: bson.M{"$multiply": []interface{}{"$vol", "$price", -1}}}},
+				}},
+				{Key: "default", Value: 0},
+			},
+		}},
+	}}}
+	groupStage := bson.D{{Key: "$group", Value: bson.D{
+		{Key: "_id", Value: "$isin"},
+		{Key: "vol", Value: bson.M{"$sum": "$vol"}},
+		{Key: "balance", Value: bson.M{"$sum": "$price"}},
+	}}}
+	joinPriceStage := bson.D{{Key: "$lookup", Value: bson.D{
+		{Key: "from", Value: "prices"},
+		{Key: "let", Value: bson.M{"id": "$_id"}},
+		{Key: "pipeline", Value: []bson.M{
+			{"$match": bson.M{
+				"$expr": bson.M{
+					"$and": []bson.M{
+						{"$eq": []interface{}{"$isin", "$$id"}},
+						{"$lte": []interface{}{"$time", dtime}},
+					},
+				},
+			}},
+			{"$sort": bson.M{"time": -1}},
+			{"$limit": 1},
+		}},
+		{Key: "as", Value: "priceinfo"},
+	}}}
+	joinInfoStage := bson.D{{Key: "$lookup", Value: bson.D{
+		{Key: "from", Value: "instruments"},
+		{Key: "localField", Value: "_id"},
+		{Key: "foreignField", Value: "isin"},
+		{Key: "as", Value: "securitiesinfo"},
+	}}}
+	flattenStage := bson.D{{Key: "$project", Value: bson.D{
+		{Key: "vol", Value: true},
+		{Key: "balance", Value: true},
+		{Key: "priceinfo", Value: bson.M{"$arrayElemAt": []interface{}{"$priceinfo", 0}}},
+		{Key: "securitiesinfo", Value: bson.M{"$arrayElemAt": []interface{}{"$securitiesinfo", 0}}},
+	}}}
+	finalStage := bson.D{{Key: "$project", Value: bson.D{
+		{Key: "vol", Value: true},
+		{Key: "balance", Value: true},
+		{Key: "price", Value: "$priceinfo.price"},
+		{Key: "ticker", Value: "$securitiesinfo.ticker"},
+		{Key: "name", Value: "$securitiesinfo.name"},
+	}}}
+	filterZeroVolStage := bson.D{{Key: "$match", Value: bson.M{
+		"$expr": bson.M{
+			"$or": []bson.M{
+				{"$eq": []interface{}{"$_id", "RUB"}},
+				{"$ne": []interface{}{"$vol", 0}},
+			},
+		},
+	}}}
+	ctx := db.context()
+	cur, err := db.operations.Aggregate(ctx, mongo.Pipeline{matchStage, projectStage, groupStage, joinPriceStage, joinInfoStage, flattenStage, finalStage, filterZeroVolStage})
+	defer cur.Close(ctx)
+
 	if err != nil {
 		return nil, err
 	}
-	instrMap := make(map[string]models.Instrument)
-	for _, ins := range instr {
-		instrMap[ins.ISIN] = ins
+
+	var rawSecurities []struct {
+		ISIN    string `bson:"_id"`
+		Ticker  string `bson:"ticker"`
+		Name    string `bson:"name"`
+		Balance int64  `bson:"balance"`
+		Price   int64  `bson:"price"`
+		Volume  int64  `bson:"vol"`
+	}
+	err = cur.All(ctx, &rawSecurities)
+	if err != nil {
+		return nil, err
 	}
 	result := []models.Share{}
-	for _, sh := range shares {
-		if sh.ISIN != "" && sh.Volume != 0 {
-			sh.Ticker = instrMap[sh.ISIN].Ticker
-			result = append(result, sh)
+
+	var balance int64 = 0
+	for _, sec := range rawSecurities {
+		balance += sec.Balance
+		if sec.ISIN != "RUB" {
+			result = append(result, models.Share{
+				ISIN:   sec.ISIN,
+				Ticker: sec.Ticker,
+				Price:  float64(sec.Price) / 1e6,
+				Volume: sec.Volume,
+				Date:   dtime,
+			})
 		}
 	}
-
-	if onDate == "" {
-		onDate = time.Now().Format("2006-01-02T15:04:05Z07:00")
-	}
-
-	if dtime, err := time.Parse("2006-01-02T15:04:05Z07:00", onDate); err == nil {
-		y, m, d := dtime.Date()
-		dt := time.Date(y, m, d, 7, 0, 0, 0, time.UTC)
-
-		and := []interface{}{
-			bson.M{"time": bson.M{"$gte": dt.AddDate(0, 0, -10)}},
-			bson.M{"time": bson.M{"$lte": dt}},
-		}
-		filter := bson.M{"$and": and}
-		findOptions := options.Find()
-		prices, err := db.getPrices(filter, findOptions)
-		if err != nil {
-			return nil, err
-		}
-
-		pricesMap := make(map[string][]models.Price)
-		for _, price := range prices {
-			if pr, ok := pricesMap[price.ISIN]; ok {
-				pr = append(pr, price)
-				pricesMap[price.ISIN] = pr
-			} else {
-				pricesMap[price.ISIN] = []models.Price{price}
-			}
-		}
-
-		pricesMapLastPrice := make(map[string]models.Price)
-		for key, val := range pricesMap {
-			sort.Slice(val, func(i, j int) bool { return val[i].Date.After(val[j].Date) })
-			pricesMapLastPrice[key] = val[0]
-		}
-
-		for i, sh := range result {
-			result[i].Date = dt
-			result[i].Price = pricesMapLastPrice[sh.ISIN].Price
-		}
-	}
+	result = append(result, models.Share{
+		ISIN:   "RUB",
+		Ticker: "RUB",
+		Price:  float64(balance) / 1e6,
+		Volume: 1,
+		Date:   dtime,
+	})
 	return result, nil
 }
