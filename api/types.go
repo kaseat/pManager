@@ -59,6 +59,12 @@ type operationRequest struct {
 	OperationType string  `json:"type" example:"sell"`
 }
 
+type priceRequest struct {
+	Time   int64   `json:"time" example:"1467590400"`
+	Price  float64 `json:"price" example:"293.61"`
+	Volume int     `json:"vol" example:"100"`
+}
+
 type errorResponse struct {
 	Error string `json:"error" example:"Something went wrong"`
 }

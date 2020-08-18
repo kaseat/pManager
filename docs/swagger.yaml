@@ -90,6 +90,18 @@ definitions:
         example: Best portfolio
         type: string
     type: object
+  api.priceRequest:
+    properties:
+      price:
+        example: 293.61
+        type: number
+      time:
+        example: 1467590400
+        type: integer
+      vol:
+        example: 100
+        type: integer
+    type: object
   api.putPortfoliioSuccess:
     properties:
       hasModified:
@@ -684,6 +696,44 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get prices
+      tags:
+      - prices
+    post:
+      description: Get prices
+      operationId: add-price
+      parameters:
+      - description: ISIN
+        in: query
+        name: isin
+        type: string
+      - description: Price info
+        in: body
+        name: price
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/api.priceRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns success status
+          schema:
+            items:
+              $ref: '#/definitions/api.commonResponse'
+            type: array
+        "400":
+          description: Returns when any processing error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+        "401":
+          description: Returns when authentication error occurs
+          schema:
+            $ref: '#/definitions/api.errorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Add prices
       tags:
       - prices
   /prices/sync:

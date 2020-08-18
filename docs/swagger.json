@@ -796,6 +796,65 @@
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get prices",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "prices"
+                ],
+                "summary": "Add prices",
+                "operationId": "add-price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ISIN",
+                        "name": "isin",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Price info",
+                        "name": "price",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.priceRequest"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns success status",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.commonResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Returns when any processing error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Returns when authentication error occurs",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorResponse"
+                        }
+                    }
+                }
             }
         },
         "/prices/sync": {
@@ -1246,6 +1305,23 @@
                 "name": {
                     "type": "string",
                     "example": "Best portfolio"
+                }
+            }
+        },
+        "api.priceRequest": {
+            "type": "object",
+            "properties": {
+                "price": {
+                    "type": "number",
+                    "example": 293.61
+                },
+                "time": {
+                    "type": "integer",
+                    "example": 1467590400
+                },
+                "vol": {
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },

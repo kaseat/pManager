@@ -1,8 +1,12 @@
 package api
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"time"
 
+	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/storage"
 	"github.com/kaseat/pManager/sync/tcs"
 )
@@ -52,4 +56,52 @@ func GetPrices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeOk(w, prices)
+}
+
+// AddPrices gets prices
+// @summary Add prices
+// @description Get prices
+// @id add-price
+// @produce json
+// @param isin query string false "ISIN"
+// @param price body []priceRequest true "Price info"
+// @success 200 {array} commonResponse "Returns success status"
+// @failure 400 {object} errorResponse "Returns when any processing error occurs"
+// @failure 401 {object} errorResponse "Returns when authentication error occurs"
+// @tags prices
+// @security ApiKeyAuth
+// @router /prices [post]
+func AddPrices(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	var pricesRaw []priceRequest
+	err = json.Unmarshal(body, &pricesRaw)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	s := storage.GetStorage()
+	isin := r.FormValue("isin")
+	prices := make([]models.Price, len(pricesRaw))
+	for i, price := range pricesRaw {
+		prices[i] = models.Price{
+			Price:  price.Price,
+			Volume: price.Volume,
+			ISIN:   isin,
+			Date:   time.Unix(price.Time, 0),
+		}
+	}
+
+	err = s.AddPrices(prices)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeOk(w, commonResponse{Status: "ok"})
 }
