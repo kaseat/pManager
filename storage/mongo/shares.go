@@ -134,12 +134,14 @@ func (db Db) GetShares(pid string, onDate string) ([]models.Share, error) {
 			})
 		}
 	}
-	result = append(result, models.Share{
-		ISIN:   "RUB",
-		Ticker: "RUB",
-		Price:  float64(balance) / 1e6,
-		Volume: 1,
-		Date:   dtime,
-	})
+	if len(rawSecurities) != 0 {
+		result = append(result, models.Share{
+			ISIN:   "RUB",
+			Ticker: "RUB",
+			Price:  float64(balance) / 1e6,
+			Volume: 1,
+			Date:   dtime,
+		})
+	}
 	return result, nil
 }
