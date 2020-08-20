@@ -49,6 +49,7 @@ func main() {
 	prices := router.PathPrefix("/api/prices").Subrouter().StrictSlash(true)
 	prices.Use(api.VerifyTokenMiddleware)
 	prices.HandleFunc("", api.GetPrices).Methods("GET")
+	prices.HandleFunc("", api.AddPrices).Methods("POST")
 	prices.HandleFunc("/sync", api.SyncPrices).Methods("GET")
 
 	portfolios := router.PathPrefix("/api/portfolios").Subrouter().StrictSlash(true)
