@@ -3,7 +3,7 @@ CREATE SEQUENCE operations_id_seq;
 CREATE TABLE operations (
     id integer DEFAULT pseudo_encrypt_24(CAST (nextval('operations_id_seq') AS integer)),
     pid integer NOT NULL,
-    isin char(12) NOT NULL,
+    isin varchar(12) NOT NULL,
 	time timestamp NOT NULL,
     op_id smallint NOT NULL,
 	vol integer NOT NULL,

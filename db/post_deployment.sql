@@ -1,7 +1,7 @@
 INSERT INTO currencies VALUES
     ('EUR','Евро'),
     ('USD','Доллар США'),
-    ('RUB','Российский рубль')
+    ('RUB','Российский рубль');
 
 INSERT INTO operation_types VALUES
     (1,'buy','Покупка'),
@@ -13,4 +13,13 @@ INSERT INTO operation_types VALUES
     (7,'coupon','Выплата купона'),
     (8,'accruedInterestBuy','НКД при покупке'),
     (9,'accruedInterestSell','НКД при продаже'),
-    (10,'buyback','Выкуп ценной бумаги')
+    (10,'buyback','Выкуп ценной бумаги');
+
+INSERT INTO securities_types VALUES
+    (10,'Stock','Акции'),
+    (20,'Bond','Облигации'),
+    (31,'ErfStock','ETF на акции'),
+    (32,'EtfBond','ETF на облигации'),
+    (34,'EtfMixed','Смешанный ETF'),
+    (35,'EtfGold','ETF на золото'),
+    (36,'EtfCash','ETF на аналог кэша');
