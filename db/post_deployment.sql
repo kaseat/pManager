@@ -18,8 +18,9 @@ INSERT INTO operation_types VALUES
 INSERT INTO securities_types VALUES
     (10,'Stock','Акции'),
     (20,'Bond','Облигации'),
-    (31,'ErfStock','ETF на акции'),
+    (31,'EtfStock','ETF на акции'),
     (32,'EtfBond','ETF на облигации'),
     (34,'EtfMixed','Смешанный ETF'),
     (35,'EtfGold','ETF на золото'),
-    (36,'EtfCash','ETF на аналог кэша');
+    (36,'EtfCash','ETF на аналог кэша'),
+    (60,'Cash','Кэш');

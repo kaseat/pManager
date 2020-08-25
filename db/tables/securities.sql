@@ -1,6 +1,6 @@
 CREATE TABLE securities (
 	isin varchar(12) NOT NULL,
-	ticker varchar(10) NOT NULL,
+	ticker varchar(12) NOT NULL,
 	figi varchar(12) NOT NULL,
 	currency char(3) NOT NULL,
 	asset_type smallint NOT NULL,

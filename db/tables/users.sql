@@ -8,3 +8,5 @@ CREATE TABLE users (
     token json NULL,
 	CONSTRAINT pk_users PRIMARY KEY (id)
 );
+
+CREATE UNIQUE INDEX pk_users_login ON users(login);
