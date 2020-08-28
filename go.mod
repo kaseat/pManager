@@ -8,7 +8,7 @@ require (
 	github.com/go-openapi/spec v0.19.7 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/gorilla/mux v1.7.3
-	github.com/jackc/pgx v3.6.2+incompatible
+	github.com/jackc/pgconn v1.6.4
 	github.com/jackc/pgx/v4 v4.8.1
 	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/oleiade/lane v1.0.0
