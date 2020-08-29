@@ -15,7 +15,7 @@ func (db Db) AddPortfolio(userID string, p models.Portfolio) (string, error) {
 		return "", errors.New("Invalid user Id format. Expected positive number")
 	}
 	var id int
-	query := "insert into portfolios (pid,name,title) values ($1,$2,$3) returning id;"
+	query := "insert into portfolios (uid,name,title) values ($1,$2,$3) returning id;"
 	err = db.connection.QueryRow(db.context, query, uid, p.Name, p.Description).Scan(&id)
 	if err != nil {
 		pgerr, ok := err.(*pgconn.PgError)
@@ -45,7 +45,7 @@ func (db Db) GetPortfolio(userID string, portfolioID string) (models.Portfolio, 
 	var name string
 	var title string
 
-	query := "select name,title from portfolios where pid = $1 and id = $2;"
+	query := "select name,title from portfolios where uid = $1 and id = $2;"
 	err = db.connection.QueryRow(db.context, query, uid, pid).Scan(&name, &title)
 	if err != nil {
 		return result, err
@@ -64,7 +64,7 @@ func (db Db) GetPortfolios(userID string) ([]models.Portfolio, error) {
 	if err != nil {
 		return nil, errors.New("Invalid user Id format. Expected positive number")
 	}
-	query := "select id,name,title from portfolios where pid = $1;"
+	query := "select id,name,title from portfolios where uid = $1;"
 	rows, err := db.connection.Query(db.context, query, uid)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (db Db) UpdatePortfolio(userID string, portfolioID string, p models.Portfol
 		return false, errors.New("Invalid portfolio Id format. Expected positive number")
 	}
 
-	query := "update portfolios set name = $1, title = $2 where pid = $3 and id = $4;"
+	query := "update portfolios set name = $1, title = $2 where uid = $3 and id = $4;"
 	r, err := db.connection.Exec(db.context, query, p.Name, p.Description, uid, pid)
 	if err != nil {
 		return false, err
@@ -122,7 +122,7 @@ func (db Db) DeletePortfolio(userID string, portfolioID string) (bool, error) {
 		return false, errors.New("Invalid portfolio Id format. Expected positive number")
 	}
 
-	query := "delete from portfolios where pid = $1 and id = $2;"
+	query := "delete from portfolios where uid = $1 and id = $2;"
 	r, err := db.connection.Exec(db.context, query, uid, pid)
 	if err != nil {
 		return false, err
@@ -136,19 +136,18 @@ func (db Db) DeletePortfolio(userID string, portfolioID string) (bool, error) {
 // DeletePortfolios removes all portfolios for provided user
 // Also removes all operations associated with this portfolios
 func (db Db) DeletePortfolios(userID string) (int64, error) {
-	// todo: add operations deletion
 	uid, err := strconv.ParseInt(userID, 10, 32)
 	if err != nil {
 		return 0, errors.New("Invalid user Id format. Expected positive number")
 	}
 	c, err := db.connection.Begin(db.context)
-	query := "delete from operations o using portfolios p where o.pid = p.id and p.pid = $1;"
+	query := "delete from operations o using portfolios p where o.pid = p.id and p.uid = $1;"
 	_, err = c.Exec(db.context, query, uid)
 	if err != nil {
 		c.Rollback(db.context)
 		return 0, err
 	}
-	query = "delete from portfolios where pid = $1;"
+	query = "delete from portfolios where uid = $1;"
 	r, err := c.Exec(db.context, query, uid)
 	if err != nil {
 		c.Rollback(db.context)

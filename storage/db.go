@@ -17,7 +17,6 @@ type Db interface {
 	AddUserToken(state string, token *oauth2.Token) error
 	GetUserToken(login string) (oauth2.Token, error)
 	GetUserPassword(login string) (string, error)
-	UpdateUser(login string, user models.User) (bool, error)
 	UpdateUserPassword(login, hash string) (bool, error)
 	DeleteUser(login string) (bool, error)
 
