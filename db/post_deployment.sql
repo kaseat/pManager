@@ -22,8 +22,8 @@ INSERT INTO securities_types VALUES
     (32,'EtfBond','ETF на облигации'),
     (34,'EtfMixed','Смешанный ETF'),
     (35,'EtfGold','ETF на золото'),
-    (36,'EtfCash','ETF на аналог кэша'),
-    (60,'Cash','Кэш');
+    (36,'EtfCurrency','ETF на аналог кэша'),
+    (60,'Currency','Кэш');
 
 INSERT INTO user_roles VALUES
     (1,'admin','Администратор'),
