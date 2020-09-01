@@ -28,4 +28,12 @@ INSERT INTO securities_types VALUES
 INSERT INTO user_roles VALUES
     (1,'admin','Администратор'),
     (2,'user','Пользователь');
-    
+
+INSERT INTO sync_providers VALUES
+    (1,'sber','Сбербанк'),
+    (2,'tcs','Тинькофф'),
+    (3,'vtb','ВТБ');
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO test;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO test;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO test;

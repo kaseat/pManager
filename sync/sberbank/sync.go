@@ -12,6 +12,7 @@ import (
 
 	"github.com/kaseat/pManager/gmail"
 	"github.com/kaseat/pManager/models"
+	"github.com/kaseat/pManager/models/provider"
 	"github.com/kaseat/pManager/storage"
 )
 
@@ -35,7 +36,7 @@ func SyncGmail(login, pid, from, to string) {
 	}
 
 	s := storage.GetStorage()
-	t, err := s.GetUserLastUpdateTime(login, "sberbank")
+	t, err := s.GetUserLastUpdateTime(login, provider.Sber)
 	if err != nil {
 		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
 		return
@@ -116,7 +117,7 @@ func SyncGmail(login, pid, from, to string) {
 		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "save opertions for", login, "to storge OK")
 	}
 
-	err = s.AddUserLastUpdateTime(login, "sberbank", time.Now())
+	err = s.AddUserLastUpdateTime(login, provider.Sber, time.Now())
 	if err != nil {
 		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
 		return

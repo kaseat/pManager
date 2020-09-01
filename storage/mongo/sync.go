@@ -3,13 +3,14 @@ package mongo
 import (
 	"time"
 
+	"github.com/kaseat/pManager/models/provider"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // AddUserLastUpdateTime saves last date when specified provider made sync
-func (db Db) AddUserLastUpdateTime(login string, provider string, date time.Time) error {
+func (db Db) AddUserLastUpdateTime(login string, provider provider.Type, date time.Time) error {
 	ctx := db.context()
 	filter := bson.M{"login": login}
 	update := bson.M{"$push": bson.M{"lastSync": bson.M{"date": date.Format(time.RFC3339Nano), "provider": provider}}}
@@ -23,7 +24,7 @@ func (db Db) AddUserLastUpdateTime(login string, provider string, date time.Time
 }
 
 // DeleteUserLastUpdateTime removes last date when specified provider made sync
-func (db Db) DeleteUserLastUpdateTime(login string, provider string) error {
+func (db Db) DeleteUserLastUpdateTime(login string, provider provider.Type) error {
 	ctx := db.context()
 	filter := bson.M{"login": login}
 	update := bson.M{"$pull": bson.M{"lastSync": bson.M{"provider": provider}}}
@@ -37,7 +38,7 @@ func (db Db) DeleteUserLastUpdateTime(login string, provider string) error {
 }
 
 // GetUserLastUpdateTime receives last date when specified provider made sync
-func (db Db) GetUserLastUpdateTime(login string, provider string) (time.Time, error) {
+func (db Db) GetUserLastUpdateTime(login string, provider provider.Type) (time.Time, error) {
 	filter := bson.M{"login": login}
 	opts := options.FindOne()
 	ctx := db.context()
@@ -56,7 +57,7 @@ func (db Db) GetUserLastUpdateTime(login string, provider string) (time.Time, er
 	res.Decode(&data)
 	result := time.Time{}
 	for _, it := range data.LastSync {
-		if it.Provider == provider {
+		if it.Provider == string(provider) {
 			t, _ := time.Parse(time.RFC3339Nano, it.Date)
 			result = t
 			break

@@ -9,6 +9,7 @@ import (
 	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/models/currency"
 	"github.com/kaseat/pManager/models/operation"
+	"github.com/kaseat/pManager/models/provider"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -551,7 +552,7 @@ func TestPortfolios(t *testing.T) {
 
 func TestLastUpdateTimeStorage(t *testing.T) {
 	// arrange
-	provider := "test"
+	provider := provider.Sber
 	now, _ := time.Parse(time.RFC3339, "2020-05-13T22:08:41Z")
 	login := "test_login"
 	u := addTestUser(login)

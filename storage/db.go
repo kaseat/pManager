@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/kaseat/pManager/models"
+	"github.com/kaseat/pManager/models/provider"
 	"github.com/kaseat/pManager/storage/mongo"
 	"golang.org/x/oauth2"
 )
@@ -27,9 +28,9 @@ type Db interface {
 	DeletePortfolio(userID string, portfolioID string) (bool, error)
 	DeletePortfolios(userID string) (int64, error)
 
-	AddUserLastUpdateTime(login string, provider string, date time.Time) error
-	GetUserLastUpdateTime(login string, provider string) (time.Time, error)
-	DeleteUserLastUpdateTime(login string, provider string) error
+	AddUserLastUpdateTime(login string, provider provider.Type, date time.Time) error
+	GetUserLastUpdateTime(login string, provider provider.Type) (time.Time, error)
+	DeleteUserLastUpdateTime(login string, provider provider.Type) error
 
 	AddOperation(portfolioID string, op models.Operation) (string, error)
 	AddOperations(portfolioID string, ops []models.Operation) ([]string, error)
