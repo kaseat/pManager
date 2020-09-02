@@ -39,7 +39,7 @@ func (db Db) DeleteTcsToken() error {
 }
 
 // GetTcsToken finds token to access tcs API
-func (db Db) GetTcsToken() string {
+func (db Db) GetTcsToken() (string, error) {
 	ctx := db.context()
 	filter := bson.M{}
 	findOptions := options.FindOne()
@@ -47,6 +47,9 @@ func (db Db) GetTcsToken() string {
 	var raw struct {
 		Token string `bson:"token"`
 	}
-	ins.Decode(&raw)
-	return raw.Token
+	err := ins.Decode(&raw)
+	if err != nil {
+		return "", err
+	}
+	return raw.Token, nil
 }

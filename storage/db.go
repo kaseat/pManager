@@ -57,7 +57,7 @@ type Db interface {
 
 	AddTcsToken(token string) error
 	DeleteTcsToken() error
-	GetTcsToken() string
+	GetTcsToken() (string, error)
 }
 
 var db mongo.Db

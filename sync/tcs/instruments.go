@@ -30,7 +30,7 @@ func SyncInstruments() {
 	atomic.StoreInt32(&syncInstrumentsIsRunning, 1)
 	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Begin sync instruments")
 	s := storage.GetStorage()
-	token := s.GetTcsToken()
+	token, _ := s.GetTcsToken()
 	if token == "" {
 		setLastInstrumentError(errors.New("No TCS token found"))
 		return

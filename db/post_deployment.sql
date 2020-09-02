@@ -34,6 +34,8 @@ INSERT INTO sync_providers VALUES
     (2,'tcs','Тинькофф'),
     (3,'vtb','ВТБ');
 
+INSERT INTO settings (settings) VALUES (jsonb_build_object('ver', 1));
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO test;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO test;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO test;
