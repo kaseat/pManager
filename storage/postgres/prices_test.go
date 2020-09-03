@@ -1,4 +1,4 @@
-package mongo
+package postgres
 
 import (
 	"testing"
@@ -8,9 +8,10 @@ import (
 )
 
 func TestPriceStorage(t *testing.T) {
+	db.AddInstruments(getTestInstruments())
 	tp := getTestPrices()
 	db.AddPrices(tp)
-	ins, _ := db.GetPrices("isin", "IE00B4BNMY34", "", "")
+	ins, _ := db.GetPrices("isin", "US8552441094", "", "")
 	if len(ins) == 4 {
 		if ins[0] == tp[0] {
 			t.Logf("Success! Expected %v, got %v", tp[0], ins[0])
@@ -20,12 +21,12 @@ func TestPriceStorage(t *testing.T) {
 	} else {
 		t.Errorf("Fail! Expected %v results, got %v", 1, len(ins))
 	}
-	dl, _ := db.DeletePrices("isin", "IE00B4BNMY34")
+	dl, _ := db.DeletePrices("isin", "US8552441094")
 	if dl != 4 {
 		t.Errorf("Fail! Expected %v element to be deleted, got %v", 1, dl)
 	}
 
-	ins, _ = db.GetPrices("isin", "IE00B4BNMY34", "", "")
+	ins, _ = db.GetPrices("isin", "US8552441094", "", "")
 	if len(ins) == 0 {
 		t.Logf("Success! Expected %v, got %v", 0, len(ins))
 	} else {
@@ -33,48 +34,50 @@ func TestPriceStorage(t *testing.T) {
 	}
 
 	db.AddPrices(tp)
-	ins, _ = db.GetPricesByIsin("IE00B4BNMY34", "2019-08-22T07:00:00Z", "2019-08-23T07:00:00Z")
+	ins, _ = db.GetPricesByIsin("US8552441094", "2019-08-22T07:00:00Z", "2019-08-23T07:00:00Z")
 	if len(ins) == 2 {
-		t.Logf("Success! Expected %v, got %v", 0, len(ins))
+		t.Logf("Success! Expected %v, got %v", 2, len(ins))
 	} else {
-		t.Errorf("Fail! Expected %v pricec after delete, got %v", 0, len(ins))
+		t.Errorf("Fail! Expected %v pricec after delete, got %v", 2, len(ins))
 	}
 
 	db.DeleteAllPrices()
-	ins, _ = db.GetPricesByIsin("IE00B4BNMY34", "", "")
+	ins, _ = db.GetPricesByIsin("US8552441094", "", "")
 	if len(ins) == 0 {
 		t.Logf("Success! Expected %v, got %v", 0, len(ins))
 	} else {
 		t.Errorf("Fail! Expected %v pricec after delete, got %v", 0, len(ins))
 	}
+
+	db.DeleteAllInstruments()
 }
 
 func getTestPrices() []models.Price {
-	t1, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-21T07:00:00Z")
-	t2, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-22T07:00:00Z")
-	t3, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-23T07:00:00Z")
-	t4, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-26T07:00:00Z")
+	t1, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-21T00:00:00Z")
+	t2, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-22T00:00:00Z")
+	t3, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-23T00:00:00Z")
+	t4, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-26T00:00:00Z")
 	return []models.Price{
 		{
-			ISIN:   "IE00B4BNMY34",
+			ISIN:   "US8552441094",
 			Date:   t1,
 			Price:  194.2,
 			Volume: 223298,
 		},
 		{
-			ISIN:   "IE00B4BNMY34",
+			ISIN:   "US8552441094",
 			Date:   t2,
 			Price:  195.73,
 			Volume: 223298,
 		},
 		{
-			ISIN:   "IE00B4BNMY34",
+			ISIN:   "US8552441094",
 			Date:   t3,
 			Price:  196.34,
 			Volume: 167941,
 		},
 		{
-			ISIN:   "IE00B4BNMY34",
+			ISIN:   "US8552441094",
 			Date:   t4,
 			Price:  190,
 			Volume: 371916,

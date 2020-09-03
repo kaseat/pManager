@@ -41,7 +41,8 @@ func (db Db) AddPrices(prices []models.Price) error {
 }
 
 // GetPrices finds prices depending on input prameters
-func (db Db) GetPrices(key string, value string) ([]models.Price, error) {
+func (db Db) GetPrices(key, value, from, to string) ([]models.Price, error) {
+	// todo: implement time bounds if needed
 	filter := bson.M{key: value}
 	findOptions := options.Find()
 	return db.getPrices(filter, findOptions)

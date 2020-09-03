@@ -18,16 +18,16 @@ const candlesURL = "https://api-invest.tinkoff.ru/openapi/sandbox/market/candles
 var lastSyncPricesError atomic.Value
 var syncPricesIsRunning int32
 
-// SyncPrices sync daily prices for instruments
+// SyncPrices sync daily prices for prices
 func SyncPrices() {
 	defer atomic.StoreInt32(&syncPricesIsRunning, 0)
 	if atomic.LoadInt32(&syncPricesIsRunning) == 1 {
 		return
 	}
 	atomic.StoreInt32(&syncPricesIsRunning, 1)
-
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Begin sync prices")
 	s := storage.GetStorage()
-	token := s.GetTcsToken()
+	token, _ := s.GetTcsToken()
 	instruments, _ := s.GetAllInstruments()
 	client := &http.Client{}
 

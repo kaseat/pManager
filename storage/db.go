@@ -48,7 +48,7 @@ type Db interface {
 	DeleteAllInstruments() (int64, error)
 
 	AddPrices(prices []models.Price) error
-	GetPrices(key string, value string) ([]models.Price, error)
+	GetPrices(key, value, from, to string) ([]models.Price, error)
 	GetPricesByIsin(isin, from, to string) ([]models.Price, error)
 	DeletePrices(key string, value string) (int64, error)
 	DeleteAllPrices() (int64, error)
