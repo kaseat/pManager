@@ -35,7 +35,7 @@ func (db Db) GetUserByLogin(login string) (models.User, error) {
 	result := models.User{}
 	var id int
 	var role int
-	var email string
+	var email *string
 
 	query := "select id,role_id,email from users where login = $1;"
 	err := db.connection.QueryRow(db.context, query, login).Scan(&id, &role, &email)
@@ -43,7 +43,10 @@ func (db Db) GetUserByLogin(login string) (models.User, error) {
 		return result, err
 	}
 
-	result.Email = email
+	if email != nil {
+		result.Email = *email
+	}
+
 	result.Login = login
 	result.UserID = strconv.Itoa(id)
 	if role == 1 {
@@ -133,13 +136,19 @@ func (db Db) DeleteUser(login string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	query := "delete from operations o using portfolios p, users u where u.id = p.pid and o.pid =p.id and u.login = $1;"
+	query := "delete from operations o using portfolios p, users u where u.id = p.uid and o.pid =p.id and u.login = $1;"
 	_, err = c.Exec(db.context, query, login)
 	if err != nil {
 		c.Rollback(db.context)
 		return false, err
 	}
-	query = "delete from portfolios p using users u where u.id = p.pid and u.login = $1;"
+	query = "delete from portfolios p using users u where u.id = p.uid and u.login = $1;"
+	_, err = c.Exec(db.context, query, login)
+	if err != nil {
+		c.Rollback(db.context)
+		return false, err
+	}
+	query = "delete from user_sync s using users u where u.id = s.uid and u.login = $1;"
 	_, err = c.Exec(db.context, query, login)
 	if err != nil {
 		c.Rollback(db.context)
