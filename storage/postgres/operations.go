@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -20,7 +21,7 @@ func (db Db) AddOperation(portfolioID string, op models.Operation) (string, erro
 
 	var id int
 	opIds := getOperationTypesByName()
-	query := "insert into operations (pid,isin,time,op_id,vol,price) values ($1,$2,$3,$4,$5,$6) returning id;"
+	query := "insert into operations (pid,sid,time,op_id,vol,price) select $1,id,$3,$4,$5,$6 from securities where isin = $2 returning id;"
 	err = db.connection.QueryRow(db.context, query, pid, op.ISIN, op.DateTime.UTC(), opIds[string(op.OperationType)], op.Volume, op.Price).Scan(&id)
 	if err != nil {
 		pgerr, ok := err.(*pgconn.PgError)
@@ -43,13 +44,41 @@ func (db Db) AddOperations(portfolioID string, ops []models.Operation) ([]string
 		return nil, errors.New("Invalid portfolio Id format. Expected positive number")
 	}
 
+	isins := map[string]bool{}
+	for _, op := range ops {
+		fmt.Println(op.ISIN, op.Ticker)
+		isins[op.ISIN] = true
+	}
+
+	isinDistinct := make([]string, 0, len(isins))
+	for k := range isins {
+		isinDistinct = append(isinDistinct, k)
+	}
+	query := fmt.Sprintf("select id,isin from securities where isin in ('%s')", strings.Join(isinDistinct, "','"))
+	fmt.Println(query)
+	queryResult, err := db.connection.Query(db.context, query)
+	if err != nil {
+		return nil, err
+	}
+
+	isinIDMap := make(map[string]int, len(isins))
+	for queryResult.Next() {
+		var id int
+		var isin string
+		err = queryResult.Scan(&id, &isin)
+		if err != nil {
+			return nil, err
+		}
+		isinIDMap[isin] = id
+	}
+
 	rows := make([][]interface{}, len(ops))
 	opIds := getOperationTypesByName()
 	for i, op := range ops {
-		rows[i] = []interface{}{pid, op.ISIN, op.DateTime.UTC(), opIds[string(op.OperationType)], op.Volume, op.Price}
+		rows[i] = []interface{}{pid, isinIDMap[op.ISIN], op.DateTime.UTC(), opIds[string(op.OperationType)], op.Volume, op.Price}
 	}
 
-	colNames := []string{"pid", "isin", "time", "op_id", "vol", "price"}
+	colNames := []string{"pid", "sid", "time", "op_id", "vol", "price"}
 	_, err = db.connection.CopyFrom(db.context, pgx.Identifier{"operations"}, colNames, pgx.CopyFromRows(rows))
 	pgerr, ok := err.(*pgconn.PgError)
 	if !ok {
@@ -69,8 +98,8 @@ func (db Db) GetOperations(portfolioID string, key string, value string, from st
 	}
 	params := []interface{}{pid}
 	n := 1
-	query := `select o.id::varchar(20), o.isin, s.figi, s.currency, o.time, t.name, o.vol, o.price from operations o
-	inner join securities s on s.isin = o.isin inner join operation_types t on t.id = o.op_id where pid = $1`
+	query := `select o.id::varchar(20), s.isin, s.figi, s.currency, o.time, t.name, o.vol, o.price from operations o
+	inner join securities s on s.id = o.sid inner join operation_types t on t.id = o.op_id where pid = $1`
 	if key != "" && value != "" {
 		n++
 		query += fmt.Sprintf(" and %s = $%d", key, n)
