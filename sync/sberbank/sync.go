@@ -53,6 +53,7 @@ func SyncGmail(login, pid, from, to string) {
 		query = fmt.Sprintf("%s before:%s", query, to)
 	}
 
+	fmt.Println(query)
 	r, err := srv.Users.Messages.List("me").Q(query).Do()
 	if err != nil {
 		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
@@ -61,6 +62,8 @@ func SyncGmail(login, pid, from, to string) {
 
 	parsedDates := make(map[string]bool)
 	operations := make([]models.Operation, 0)
+	securities := make(map[ticker]securitiesInfo)
+	lastUptdTime := time.Time{}
 
 	for _, m := range r.Messages {
 		msg, err := srv.Users.Messages.Get("me", m.Id).Do()
@@ -93,6 +96,11 @@ func SyncGmail(login, pid, from, to string) {
 		if !report.IsEmpty {
 			if !parsedDates[report.Date] {
 				parsedDates[report.Date] = true
+
+				for k, v := range report.SecuritiesInfo {
+					securities[k] = v
+				}
+
 				if len(report.Operations) > 0 {
 					operations = append(operations, report.Operations...)
 				}
@@ -104,10 +112,22 @@ func SyncGmail(login, pid, from, to string) {
 				}
 			}
 		}
-		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Parse message on", time.Unix(msg.InternalDate/1000, 0), "ok!")
+		msgTime := time.Unix(msg.InternalDate/1000, 0)
+		if msgTime.After(lastUptdTime) {
+			lastUptdTime = msgTime
+		}
+		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Parse message on", msgTime, "ok!")
 	}
+	securities["RUB"] = securitiesInfo{ISIN: "RU000Z13FK33"}
 
 	if len(operations) != 0 {
+		for i, op := range operations {
+			inf := securities[ticker(op.Ticker)]
+			if inf.ISIN != "" {
+				operations[i].ISIN = inf.ISIN
+			}
+		}
+
 		sort.Sort(models.OperationSorter(operations))
 		_, err = s.AddOperations(pid, operations)
 		if err != nil {
@@ -117,10 +137,12 @@ func SyncGmail(login, pid, from, to string) {
 		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "save opertions for", login, "to storge OK")
 	}
 
-	err = s.AddUserLastUpdateTime(login, provider.Sber, time.Now())
-	if err != nil {
-		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
-		return
+	if !lastUptdTime.IsZero() {
+		err = s.AddUserLastUpdateTime(login, provider.Sber, lastUptdTime.AddDate(0, 0, 1))
+		if err != nil {
+			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+			return
+		}
 	}
 	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success sync sberbank operations via Gmail")
 }

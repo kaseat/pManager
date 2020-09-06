@@ -11,7 +11,7 @@ import (
 // AddUserLastUpdateTime saves last date when specified provider made sync
 func (db Db) AddUserLastUpdateTime(login string, provider provider.Type, date time.Time) error {
 	pvds := getSyncPviderTypeByName()
-	query := "insert into user_sync (uid,provider_id,last_sync) select u.id, $2,$3 from users u where login = $1;"
+	query := "insert into user_sync (uid,provider_id,last_sync) select u.id, $2,$3 from users u where login = $1 on conflict on constraint pk_user_sync do update set last_sync = $3;"
 	r, err := db.connection.Exec(db.context, query, login, pvds[provider], date)
 	if err != nil {
 		if pgerr, ok := err.(*pgconn.PgError); ok {
