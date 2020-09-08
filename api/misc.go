@@ -104,7 +104,7 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "You cannot get operations from this portfolio")
 		return
 	}
-	ops, err := s.GetOperations(pid, "curr", string(curr), "", on)
+	ops, err := s.GetOperations(pid, "currency", string(curr), "", on)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
