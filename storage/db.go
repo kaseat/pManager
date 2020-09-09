@@ -6,7 +6,18 @@ import (
 	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/models/provider"
 	"github.com/kaseat/pManager/storage/mongo"
+	"github.com/kaseat/pManager/storage/postgres"
 	"golang.org/x/oauth2"
+)
+
+// Type - storage type
+type Type string
+
+const (
+	// Mongo - MongoDB storage
+	Mongo Type = "mongo"
+	// Postgres - PostgreSQL storage
+	Postgres Type = "postgres"
 )
 
 // Db represents data storage
@@ -60,16 +71,36 @@ type Db interface {
 	GetTcsToken() (string, error)
 }
 
-var db mongo.Db
+var dbMongo mongo.Db
+var dbPostgres postgres.Db
+var currentStorage Type = Postgres
+
+// SwitchStorage switches storage
+func SwitchStorage(t Type) {
+	currentStorage = t
+}
 
 // GetStorage gets storage
 func GetStorage() Db {
-	if !db.IsInitialized() {
-		db = mongo.Db{}
-		db.Init(mongo.Config{
-			MongoURL: "mongodb://localhost:27017",
-			DbName:   "p_manager",
-		})
+	switch currentStorage {
+	case Postgres:
+		if !dbPostgres.IsInitialized() {
+			dbPostgres = postgres.Db{}
+			dbPostgres.Init(postgres.Config{
+				ConnString: "host=localhost port=5432 dbname=p_manager user=test password=test",
+			})
+		}
+		return dbPostgres
+	case Mongo:
+		if !dbMongo.IsInitialized() {
+			dbMongo = mongo.Db{}
+			dbMongo.Init(mongo.Config{
+				MongoURL: "mongodb://localhost:27017",
+				DbName:   "p_manager",
+			})
+		}
+		return dbMongo
+	default:
+		return nil
 	}
-	return db
 }
