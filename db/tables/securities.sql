@@ -14,4 +14,4 @@ CREATE TABLE securities (
     CONSTRAINT fk_securities_securities_types FOREIGN KEY(asset_type) REFERENCES securities_types(id)
 );
 
-CREATE UNIQUE INDEX pk_securities_isin ON securities(isin);
+CREATE UNIQUE INDEX pk_securities_isin ON securities(isin, currency);

@@ -90,6 +90,7 @@ func TestInstrumentStorage(t *testing.T) {
 	}
 
 	db.AddInstruments(ti)
+	db.AddInstruments([]models.Instrument{})
 
 	ins, _ = db.GetAllInstruments()
 	if len(ins) != 3 {
