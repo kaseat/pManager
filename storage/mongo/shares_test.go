@@ -86,7 +86,7 @@ func getPricesForShres() []models.Price {
 
 func getinstrumentsForShares() []models.Instrument {
 	return []models.Instrument{
-		{FIGI: "BBG005DXDPK9", ISIN: "IE00B8XB7377", Ticker: "FXGD", Name: "FinEx Золото", Currency: currency.RUB, Type: instrument.Etf},
-		{FIGI: "BBG005HLTYH9", ISIN: "IE00BD3QJ757", Ticker: "FXIT", Name: "FinEx Акции компаний IT-сектора США", Currency: currency.RUB, Type: instrument.Etf},
+		{FIGI: "BBG005DXDPK9", ISIN: "IE00B8XB7377", Ticker: "FXGD", Name: "FinEx Золото", Currency: currency.RUB, Type: instrument.EtfGold},
+		{FIGI: "BBG005HLTYH9", ISIN: "IE00BD3QJ757", Ticker: "FXIT", Name: "FinEx Акции компаний IT-сектора США", Currency: currency.RUB, Type: instrument.EtfStock},
 	}
 }

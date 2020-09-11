@@ -46,7 +46,6 @@ func (db Db) AddOperations(portfolioID string, ops []models.Operation) ([]string
 
 	isins := map[string]bool{}
 	for _, op := range ops {
-		fmt.Println(op.ISIN, op.Ticker)
 		isins[op.ISIN] = true
 	}
 
@@ -55,7 +54,6 @@ func (db Db) AddOperations(portfolioID string, ops []models.Operation) ([]string
 		isinDistinct = append(isinDistinct, k)
 	}
 	query := fmt.Sprintf("select id,isin from securities where isin in ('%s')", strings.Join(isinDistinct, "','"))
-	fmt.Println(query)
 	queryResult, err := db.connection.Query(db.context, query)
 	if err != nil {
 		return nil, err
