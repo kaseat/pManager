@@ -6,6 +6,7 @@ import (
 
 	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/models/currency"
+	"github.com/kaseat/pManager/models/exchange"
 	"github.com/kaseat/pManager/models/instrument"
 )
 
@@ -107,6 +108,7 @@ func getTestInstruments() []models.Instrument {
 			FIGI:     "BBG00R05JT04",
 			Ticker:   "RU000A1013Y3",
 			Name:     "Черкизово выпуск 2",
+			Exchange: exchange.MOEX,
 			Currency: currency.RUB,
 			Type:     instrument.Bond,
 		},
@@ -115,6 +117,7 @@ func getTestInstruments() []models.Instrument {
 			FIGI:     "BBG000CTQBF3",
 			Ticker:   "SBUX",
 			Name:     "Starbucks Corporation",
+			Exchange: exchange.SPBEX,
 			Currency: currency.USD,
 			Type:     instrument.Stock,
 		},

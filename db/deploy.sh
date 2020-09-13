@@ -8,6 +8,7 @@ tables/user_sync.sql \
 tables/portfolios.sql \
 tables/currencies.sql \
 tables/securities_types.sql \
+tables/exchange.sql \
 tables/securities.sql \
 tables/operation_types.sql \
 tables/operations.sql \

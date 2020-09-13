@@ -34,6 +34,10 @@ INSERT INTO sync_providers VALUES
     (2,'tcs','Тинькофф'),
     (3,'vtb','ВТБ');
 
+INSERT INTO exchange VALUES
+    (1,'MOEX','Московская биржа'),
+    (2,'SPBEX','Санкт-Петербургская биржа');
+
 INSERT INTO settings (settings) VALUES (jsonb_build_object('ver', 1));
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO test;

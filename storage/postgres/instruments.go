@@ -7,16 +7,18 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/kaseat/pManager/models"
+	"github.com/kaseat/pManager/models/exchange"
 	"github.com/kaseat/pManager/models/instrument"
 )
 
 // AddInstruments saves instruments info into a storage
 func (db Db) AddInstruments(instr []models.Instrument) error {
 	sType := getsecuritiesTypeByName()
-	colNames := []string{"isin", "ticker", "figi", "currency", "asset_type", "title"}
+	exType := getExchangeIDByName()
+	colNames := []string{"isin", "ticker", "figi", "currency", "exchange_id", "asset_type", "title"}
 	rows := make([][]interface{}, len(instr))
 	for i, ins := range instr {
-		rows[i] = []interface{}{ins.ISIN, ins.Ticker, ins.FIGI, ins.Currency, sType[ins.Type], ins.Name}
+		rows[i] = []interface{}{ins.ISIN, ins.Ticker, ins.FIGI, ins.Currency, exType[ins.Exchange], sType[ins.Type], ins.Name}
 	}
 
 	_, err := db.connection.CopyFrom(db.context, pgx.Identifier{"securities"}, colNames, pgx.CopyFromRows(rows))
@@ -73,8 +75,9 @@ func (db Db) ClearAllInstrumentPriceUptdTime() (bool, error) {
 func (db Db) GetInstruments(key string, value string) ([]models.Instrument, error) {
 	var rows pgx.Rows
 	var err error
-	query := `select isin,ticker,figi,currency,id_name,s.title,price_upd_time
-		from securities s inner join securities_types t on t.id = s.asset_type`
+	query := `select isin,ticker,figi,currency,code,id_name,s.title,price_upd_time
+		from securities s inner join securities_types t on t.id = s.asset_type
+		inner join exchange e on e.id = s.exchange_id`
 	if key != "" && value != "" {
 		query += fmt.Sprintf(" where %s = $1;", key)
 		rows, err = db.connection.Query(db.context, query, value)
@@ -90,7 +93,7 @@ func (db Db) GetInstruments(key string, value string) ([]models.Instrument, erro
 	for rows.Next() {
 		ins := models.Instrument{}
 		var tm *time.Time
-		err = rows.Scan(&ins.ISIN, &ins.Ticker, &ins.FIGI, &ins.Currency, &ins.Type, &ins.Name, &tm)
+		err = rows.Scan(&ins.ISIN, &ins.Ticker, &ins.FIGI, &ins.Currency, &ins.Exchange, &ins.Type, &ins.Name, &tm)
 		if err != nil {
 			return nil, err
 		}
@@ -160,5 +163,12 @@ func getsecuritiesTypeByName() map[instrument.Type]int {
 		instrument.EtfGold:     35,
 		instrument.EtfCurrency: 36,
 		instrument.Currency:    60,
+	}
+}
+
+func getExchangeIDByName() map[exchange.Type]int {
+	return map[exchange.Type]int{
+		exchange.MOEX:  1,
+		exchange.SPBEX: 2,
 	}
 }

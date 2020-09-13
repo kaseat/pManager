@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/kaseat/pManager/models/currency"
+	"github.com/kaseat/pManager/models/exchange"
 	"github.com/kaseat/pManager/models/instrument"
 	"github.com/kaseat/pManager/models/operation"
 )
@@ -31,6 +32,7 @@ type Instrument struct {
 	ISIN          string          `json:"isin,omitempty" example:"US45867G1013"`
 	Ticker        string          `json:"ticker,omitempty" example:"IDCC"`
 	Name          string          `json:"name" example:"InterDigItal Inc"`
+	Exchange      exchange.Type   `json:"exchange" example:"SPBEX"`
 	Type          instrument.Type `json:"type" example:"Stock"`
 	Currency      currency.Type   `json:"currency" example:"USD"`
 	PriceUptdTime time.Time       `json:"priceUptdTime,omitempty" example:"2020-06-06T15:54:05Z"`
