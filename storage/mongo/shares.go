@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/kaseat/pManager/models"
@@ -10,8 +11,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+func timeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	log.Printf("%s took %s", name, elapsed)
+}
+
 // GetShares gets shares
 func (db Db) GetShares(pid string, onDate string) ([]models.Share, error) {
+	defer timeTrack(time.Now(), "GetShares")
 	p, err := primitive.ObjectIDFromHex(pid)
 	if err != nil {
 		return nil, fmt.Errorf("Could not decode portfolio Id (%s). Internal error : %s", pid, err)
