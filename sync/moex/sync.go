@@ -27,9 +27,11 @@ func Sync(ticker string) {
 	client := &http.Client{}
 	var prices []priceInt
 
+	from := time.Date(2019, 5, 10, 0, 0, 0, 0, time.UTC)
+
 	cur := 0
 	for {
-		pr, curRe, err := fetchFromAPI(client, ticker, cur)
+		pr, curRe, err := fetchFromAPI(client, from, ticker, cur)
 		if err != nil {
 			break
 		}

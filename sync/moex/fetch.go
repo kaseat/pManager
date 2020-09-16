@@ -17,12 +17,12 @@ type priceInt struct {
 	Volume   int
 }
 
-func fetchFromAPI(client *http.Client, ticker string, cursor int) ([]priceInt, int, error) {
+func fetchFromAPI(client *http.Client, from time.Time, ticker string, cursor int) ([]priceInt, int, error) {
 	columns := "history.columns=BOARDID,TRADEDATE,LEGALCLOSEPRICE,VOLUME"
-	from := "from=2019-05-01"
+	fromStr := fmt.Sprintf("from=%s", from.Format("2006-01-02"))
 	start := fmt.Sprintf("start=%d", cursor)
 	url := fmt.Sprintf("http://iss.moex.com/iss/history/engines/stock/markets/shares/securities/%s.json?iss.meta=off", ticker)
-	url = fmt.Sprintf("%s&%s&%s&%s", url, columns, from, start)
+	url = fmt.Sprintf("%s&%s&%s&%s", url, columns, fromStr, start)
 
 	resp, err := client.Get(url)
 	if err != nil {
