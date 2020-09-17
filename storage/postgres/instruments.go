@@ -117,9 +117,13 @@ func (db Db) GetAllInstruments() ([]models.Instrument, error) {
 	result := []models.Instrument{}
 	for rows.Next() {
 		ins := models.Instrument{}
-		err = rows.Scan(&ins.ISIN, &ins.Ticker, &ins.FIGI, &ins.Currency, &ins.Type, &ins.Name, &ins.PriceUptdTime)
+		var tm *time.Time
+		err = rows.Scan(&ins.ISIN, &ins.Ticker, &ins.FIGI, &ins.Currency, &ins.Type, &ins.Name, &tm)
 		if err != nil {
 			return nil, err
+		}
+		if tm != nil {
+			ins.PriceUptdTime = *tm
 		}
 		result = append(result, ins)
 	}
