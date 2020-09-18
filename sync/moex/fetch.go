@@ -10,14 +10,14 @@ import (
 	"github.com/kaseat/pManager/models/currency"
 )
 
-type priceInt struct {
+type priceInternal struct {
 	Currency currency.Type
 	Date     time.Time
 	Price    float32
 	Volume   int
 }
 
-func fetchFromAPI(client *http.Client, from time.Time, ticker string, cursor int) ([]priceInt, int, error) {
+func fetchFromAPI(client *http.Client, from time.Time, ticker string, cursor int) ([]priceInternal, int, error) {
 	columns := "history.columns=BOARDID,TRADEDATE,LEGALCLOSEPRICE,VOLUME"
 	fromStr := fmt.Sprintf("from=%s", from.Format("2006-01-02"))
 	start := fmt.Sprintf("start=%d", cursor)
@@ -52,19 +52,21 @@ func fetchFromAPI(client *http.Client, from time.Time, ticker string, cursor int
 		return nil, 0, err
 	}
 
-	prices := make([]priceInt, len(rawResponse.History.Data))
+	prices := make([]priceInternal, len(rawResponse.History.Data))
 
 	for i, rawPrice := range rawResponse.History.Data {
 		var curr currency.Type
 		if rawPrice[0] == "TQTD" {
 			curr = currency.USD
+		} else if rawPrice[0] == "TQTE" {
+			curr = currency.EUR
 		} else {
 			curr = currency.RUB
 		}
 
 		dtime, _ := time.Parse("2006-01-02", rawPrice[1].(string))
 
-		price := priceInt{
+		price := priceInternal{
 			Currency: curr,
 			Date:     dtime,
 			Price:    float32(rawPrice[2].(float64)),
