@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kaseat/pManager/models"
 	"github.com/kaseat/pManager/storage"
 )
 
@@ -35,24 +36,39 @@ func Sync(ticker string) {
 		return
 	}
 	fmt.Println(ins)
-	
-	for _, i := range ins {
-		from := i.PriceUptdTime
+
+	for _, inst := range ins {
+		from := inst.PriceUptdTime
 		if from.IsZero() {
 			from = time.Date(2019, time.May, 1, 0, 0, 0, 0, time.UTC)
 		}
-		var prices []priceInternal
+		var pricesRaw []priceInternal
 		cur := 0
 		for {
 			pr, curRe, err := fetchFromAPI(client, from, ticker, cur)
 			if err != nil {
 				break
 			}
-			prices = append(prices, pr...)
+			pricesRaw = append(pricesRaw, pr...)
 			if curRe == 0 {
 				break
 			}
 			cur = curRe
 		}
+		prices := make([]models.Price, len(pricesRaw))
+
+		for _, priceRaw := range pricesRaw {
+			if inst.Currency != priceRaw.Currency {
+				break
+			}
+			price := models.Price{
+				Price:  float64(priceRaw.Price),
+				Volume: priceRaw.Volume,
+				Date:   priceRaw.Date,
+				ISIN:   inst.ISIN,
+			}
+			prices = append(prices, price)
+		}
+		s.AddPrices(prices)
 	}
 }
