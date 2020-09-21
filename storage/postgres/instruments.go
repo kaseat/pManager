@@ -75,7 +75,7 @@ func (db Db) ClearAllInstrumentPriceUptdTime() (bool, error) {
 func (db Db) GetInstruments(key string, value string) ([]models.Instrument, error) {
 	var rows pgx.Rows
 	var err error
-	query := `select isin,ticker,figi,currency,code,id_name,s.title,price_upd_time
+	query := `select s.id,isin,ticker,figi,currency,code,id_name,s.title,price_upd_time
 		from securities s inner join securities_types t on t.id = s.asset_type
 		inner join exchange e on e.id = s.exchange_id`
 	if key != "" && value != "" {
@@ -93,7 +93,7 @@ func (db Db) GetInstruments(key string, value string) ([]models.Instrument, erro
 	for rows.Next() {
 		ins := models.Instrument{}
 		var tm *time.Time
-		err = rows.Scan(&ins.ISIN, &ins.Ticker, &ins.FIGI, &ins.Currency, &ins.Exchange, &ins.Type, &ins.Name, &tm)
+		err = rows.Scan(&ins.SecID, &ins.ISIN, &ins.Ticker, &ins.FIGI, &ins.Currency, &ins.Exchange, &ins.Type, &ins.Name, &tm)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func (db Db) GetInstruments(key string, value string) ([]models.Instrument, erro
 
 // GetAllInstruments finds all instruments
 func (db Db) GetAllInstruments() ([]models.Instrument, error) {
-	query := `select isin,ticker,figi,currency,id_name,s.title,price_upd_time
+	query := `select s.id,isin,ticker,figi,currency,id_name,s.title,price_upd_time
 		from securities s inner join securities_types t on t.id = s.asset_type`
 	rows, err := db.connection.Query(db.context, query)
 	if err != nil {
@@ -118,7 +118,7 @@ func (db Db) GetAllInstruments() ([]models.Instrument, error) {
 	for rows.Next() {
 		ins := models.Instrument{}
 		var tm *time.Time
-		err = rows.Scan(&ins.ISIN, &ins.Ticker, &ins.FIGI, &ins.Currency, &ins.Type, &ins.Name, &tm)
+		err = rows.Scan(&ins.SecID, &ins.ISIN, &ins.Ticker, &ins.FIGI, &ins.Currency, &ins.Type, &ins.Name, &tm)
 		if err != nil {
 			return nil, err
 		}

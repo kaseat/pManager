@@ -12,10 +12,17 @@ import (
 
 func TestInstrumentStorage(t *testing.T) {
 	ti := getTestInstruments()
-	db.AddInstruments(ti)
-	ins, _ := db.GetInstruments("isin", "RU000A1013Y3")
+	err := db.AddInstruments(ti)
+	if err != nil {
+		t.Errorf("Fail! Unexpected error while adding securities %v", err)
+	}
+	ins, err := db.GetInstruments("isin", "RU000A1013Y3")
+	if err != nil {
+		t.Errorf("Fail! Unexpected error while getting securities %v", err)
+	}
+
 	if len(ins) == 1 {
-		if ins[0] == ti[0] {
+		if equalsExceptID(ins[0], ti[0]) {
 			t.Logf("Success! Expected %v, got %v", ti[0], ins[0])
 		} else {
 			t.Errorf("Fail! Saved and fetched instruments not match! Expected %v, got %v", ti[0], ins[0])
@@ -122,4 +129,18 @@ func getTestInstruments() []models.Instrument {
 			Type:     instrument.Stock,
 		},
 	}
+}
+
+func equalsExceptID(a models.Instrument, b models.Instrument) bool {
+	if a.Currency == b.Currency &&
+		a.Exchange == b.Exchange &&
+		a.FIGI == b.FIGI &&
+		a.ISIN == b.ISIN &&
+		a.Name == b.Name &&
+		a.PriceUptdTime == b.PriceUptdTime &&
+		a.Ticker == b.Ticker &&
+		a.Type == b.Type {
+		return true
+	}
+	return false
 }
