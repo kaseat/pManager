@@ -8,10 +8,15 @@ import (
 )
 
 func TestPriceStorage(t *testing.T) {
-	db.AddInstruments(getTestInstruments())
 	tp := getTestPrices()
-	db.AddPrices(tp)
-	ins, _ := db.GetPrices("isin", "US8552441094", "", "")
+	err := db.AddPrices(tp)
+	if err != nil {
+		t.Errorf("Fail! Unexpected error while adding prices %v", err)
+	}
+	ins, err := db.GetPrices("isin", "US8552441094", "", "")
+	if err != nil {
+		t.Errorf("Fail! Unexpected error while getting prices %v", err)
+	}
 	if len(ins) == 4 {
 		if ins[0] == tp[0] {
 			t.Logf("Success! Expected %v, got %v", tp[0], ins[0])
@@ -53,6 +58,20 @@ func TestPriceStorage(t *testing.T) {
 }
 
 func getTestPrices() []models.Price {
+	db.AddInstruments(getTestInstruments())
+	rawInstruments, _ := db.GetAllInstruments()
+	instrumentMap := make(map[string]models.Instrument, 2)
+	for _, instrument := range rawInstruments {
+		instrumentMap[instrument.ISIN] = instrument
+	}
+	testPrices := getTestPricesRaw()
+	for i, testPrice := range testPrices {
+		testPrices[i].SecID = instrumentMap[testPrice.ISIN].SecID
+	}
+	return testPrices
+}
+
+func getTestPricesRaw() []models.Price {
 	t1, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-21T00:00:00Z")
 	t2, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-22T00:00:00Z")
 	t3, _ := time.Parse("2006-01-02T15:04:05Z", "2019-08-23T00:00:00Z")

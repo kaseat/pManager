@@ -11,10 +11,10 @@ import (
 
 // AddPrices saves prices series into a storage
 func (db Db) AddPrices(prices []models.Price) error {
-	colNames := []string{"isin", "date", "vol", "price"}
+	colNames := []string{"sid", "date", "vol", "price"}
 	rows := make([][]interface{}, len(prices))
 	for i, pr := range prices {
-		rows[i] = []interface{}{pr.ISIN, pr.Date, pr.Volume, pr.Price}
+		rows[i] = []interface{}{pr.SecID, pr.Date, pr.Volume, pr.Price}
 	}
 
 	_, err := db.connection.CopyFrom(db.context, pgx.Identifier{"prices"}, colNames, pgx.CopyFromRows(rows))
@@ -32,7 +32,7 @@ func (db Db) AddPrices(prices []models.Price) error {
 func (db Db) GetPrices(key, value, from, to string) ([]models.Price, error) {
 	n := 0
 	params := []interface{}{}
-	query := "select isin,date,vol,price from prices"
+	query := "select sid,isin,date,vol,price from prices p inner join securities s on s.id=p.sid"
 	if key != "" && value != "" {
 		n++
 		if n == 1 {
@@ -69,7 +69,7 @@ func (db Db) GetPrices(key, value, from, to string) ([]models.Price, error) {
 	result := []models.Price{}
 	for rows.Next() {
 		pr := models.Price{}
-		err = rows.Scan(&pr.ISIN, &pr.Date, &pr.Volume, &pr.Price)
+		err = rows.Scan(&pr.SecID, &pr.ISIN, &pr.Date, &pr.Volume, &pr.Price)
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +89,7 @@ func (db Db) DeletePrices(key string, value string) (int64, error) {
 	var r pgconn.CommandTag
 	var err error
 	if key != "" && value != "" {
-		query := fmt.Sprintf("delete from prices where %s = $1;", key)
+		query := fmt.Sprintf("delete from prices p using securities s where p.sid = s.id and %s = $1;", key)
 		r, err = db.connection.Exec(db.context, query, value)
 	} else {
 		query := "delete from prices;"
