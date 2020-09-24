@@ -24,7 +24,7 @@ func TestInstrumentStorage(t *testing.T) {
 	}
 
 	testDate := time.Date(2020, 3, 11, 0, 0, 0, 0, time.UTC)
-	db.SetInstrumentPriceUptdTime("RU000A1013Y3", testDate)
+	db.SetInstrumentPriceUptdTime(1, testDate)
 
 	ins, _ = db.GetInstruments("isin", "RU000A1013Y3")
 	if len(ins) == 1 {
@@ -50,8 +50,8 @@ func TestInstrumentStorage(t *testing.T) {
 		t.Errorf("Fail! Expected %v results, got %v", 1, len(ins))
 	}
 
-	db.SetInstrumentPriceUptdTime("RU000A1013Y3", testDate)
-	db.SetInstrumentPriceUptdTime("US8552441094", testDate)
+	db.SetInstrumentPriceUptdTime(1, testDate)
+	db.SetInstrumentPriceUptdTime(2, testDate)
 
 	ins, _ = db.GetInstruments("isin", "RU000A1013Y3")
 

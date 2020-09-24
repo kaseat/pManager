@@ -47,7 +47,7 @@ func (db Db) AddInstruments(instr []models.Instrument) error {
 }
 
 // SetInstrumentPriceUptdTime sets time instrument prise was updated
-func (db Db) SetInstrumentPriceUptdTime(isin string, updTime time.Time) (bool, error) {
+func (db Db) SetInstrumentPriceUptdTime(isin int, updTime time.Time) (bool, error) {
 	ctx := db.context()
 	filter := bson.M{"isin": isin}
 	opts := options.Update()

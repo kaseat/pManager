@@ -22,7 +22,7 @@ func TestInstrumentStorage(t *testing.T) {
 	}
 
 	if len(ins) == 1 {
-		if equalsExceptID(ins[0], ti[0]) {
+		if ins[0] == ti[0] {
 			t.Logf("Success! Expected %v, got %v", ti[0], ins[0])
 		} else {
 			t.Errorf("Fail! Saved and fetched instruments not match! Expected %v, got %v", ti[0], ins[0])
@@ -32,7 +32,7 @@ func TestInstrumentStorage(t *testing.T) {
 	}
 
 	testDate := time.Date(2020, 3, 11, 0, 0, 0, 0, time.UTC)
-	db.SetInstrumentPriceUptdTime("RU000A1013Y3", testDate)
+	db.SetInstrumentPriceUptdTime(ti[0].SecID, testDate)
 
 	ins, _ = db.GetInstruments("isin", "RU000A1013Y3")
 	if len(ins) == 1 {
@@ -58,8 +58,8 @@ func TestInstrumentStorage(t *testing.T) {
 		t.Errorf("Fail! Expected %v results, got %v", 1, len(ins))
 	}
 
-	db.SetInstrumentPriceUptdTime("RU000A1013Y3", testDate)
-	db.SetInstrumentPriceUptdTime("US8552441094", testDate)
+	db.SetInstrumentPriceUptdTime(ti[0].SecID, testDate)
+	db.SetInstrumentPriceUptdTime(ti[1].SecID, testDate)
 
 	ins, _ = db.GetInstruments("isin", "RU000A1013Y3")
 
@@ -109,6 +109,12 @@ func TestInstrumentStorage(t *testing.T) {
 }
 
 func getTestInstruments() []models.Instrument {
+	db.AddInstruments(getTestInstrumentsRaw())
+	rawInstruments, _ := db.GetAllInstruments()
+	return rawInstruments
+}
+
+func getTestInstrumentsRaw() []models.Instrument {
 	return []models.Instrument{
 		{
 			ISIN:     "RU000A1013Y3",
@@ -129,18 +135,4 @@ func getTestInstruments() []models.Instrument {
 			Type:     instrument.Stock,
 		},
 	}
-}
-
-func equalsExceptID(a models.Instrument, b models.Instrument) bool {
-	if a.Currency == b.Currency &&
-		a.Exchange == b.Exchange &&
-		a.FIGI == b.FIGI &&
-		a.ISIN == b.ISIN &&
-		a.Name == b.Name &&
-		a.PriceUptdTime == b.PriceUptdTime &&
-		a.Ticker == b.Ticker &&
-		a.Type == b.Type {
-		return true
-	}
-	return false
 }

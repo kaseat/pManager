@@ -33,9 +33,9 @@ func (db Db) AddInstruments(instr []models.Instrument) error {
 }
 
 // SetInstrumentPriceUptdTime sets time instrument prise was updated
-func (db Db) SetInstrumentPriceUptdTime(isin string, updTime time.Time) (bool, error) {
-	query := "update securities set price_upd_time = $1 where isin = $2;"
-	r, err := db.connection.Exec(db.context, query, updTime, isin)
+func (db Db) SetInstrumentPriceUptdTime(sid int, updTime time.Time) (bool, error) {
+	query := "update securities set price_upd_time = $1 where id = $2;"
+	r, err := db.connection.Exec(db.context, query, updTime, sid)
 	if err != nil {
 		return false, err
 	}
@@ -107,8 +107,9 @@ func (db Db) GetInstruments(key string, value string) ([]models.Instrument, erro
 
 // GetAllInstruments finds all instruments
 func (db Db) GetAllInstruments() ([]models.Instrument, error) {
-	query := `select s.id,isin,ticker,figi,currency,id_name,s.title,price_upd_time
-		from securities s inner join securities_types t on t.id = s.asset_type`
+	query := `select s.id,isin,ticker,figi,currency,code,id_name,s.title,price_upd_time
+		from securities s inner join securities_types t on t.id = s.asset_type
+		inner join exchange e on e.id = s.exchange_id`
 	rows, err := db.connection.Query(db.context, query)
 	if err != nil {
 		return nil, err
@@ -118,7 +119,7 @@ func (db Db) GetAllInstruments() ([]models.Instrument, error) {
 	for rows.Next() {
 		ins := models.Instrument{}
 		var tm *time.Time
-		err = rows.Scan(&ins.SecID, &ins.ISIN, &ins.Ticker, &ins.FIGI, &ins.Currency, &ins.Type, &ins.Name, &tm)
+		err = rows.Scan(&ins.SecID, &ins.ISIN, &ins.Ticker, &ins.FIGI, &ins.Currency, &ins.Exchange, &ins.Type, &ins.Name, &tm)
 		if err != nil {
 			return nil, err
 		}

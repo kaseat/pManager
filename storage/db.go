@@ -50,7 +50,7 @@ type Db interface {
 	DeleteOperations(portfolioID string) (int64, error)
 
 	AddInstruments(instr []models.Instrument) error
-	SetInstrumentPriceUptdTime(isin string, updTime time.Time) (bool, error)
+	SetInstrumentPriceUptdTime(sid int, updTime time.Time) (bool, error)
 	ClearInstrumentPriceUptdTime(isin string) (bool, error)
 	ClearAllInstrumentPriceUptdTime() (bool, error)
 	GetInstruments(key string, value string) ([]models.Instrument, error)
