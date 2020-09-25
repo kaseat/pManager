@@ -50,7 +50,7 @@ func SyncPrices() {
 			if err := s.AddPrices(getPrices(client, token, x, ch.From, ch.To)); err != nil {
 				fmt.Printf("%s Sync price for %s from %s to %s error: %v\n", now, x.Ticker, from, to, err)
 			} else {
-				s.SetInstrumentPriceUptdTime(x.ISIN, ch.To)
+				s.SetInstrumentPriceUptdTime(x.SecID, ch.To)
 				fmt.Printf("%s Sync price for %s from %s to %s succeded\n", now, x.Ticker, from, to)
 			}
 		}
