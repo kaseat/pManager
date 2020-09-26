@@ -30,21 +30,28 @@ func Sync(ticker string) {
 	client := &http.Client{}
 
 	s := storage.GetStorage()
-	ins, err := s.GetInstruments("code", "MOEX")
+
+	var instrumentsToSync []models.Instrument
+	var err error = nil
+	if ticker == "" {
+		instrumentsToSync, err = s.GetInstruments("code", "MOEX")
+	} else {
+		instrumentsToSync, err = s.GetInstruments("ticker", ticker)
+	}
+
 	if err != nil {
 		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error get securities list:", err)
 		return
 	}
-	fmt.Println(ins)
 
-	for _, inst := range ins {
+	for _, inst := range instrumentsToSync {
 		from := inst.PriceUptdTime
 		if from.IsZero() {
 			from = time.Date(2019, time.May, 1, 0, 0, 0, 0, time.UTC)
 		}
 		var pricesRaw []priceInternal
-		cur := 0
-		for {
+
+		for cur := 0; ; {
 			pr, curRe, err := fetchFromAPI(client, from, ticker, cur)
 			if err != nil {
 				break
@@ -55,20 +62,26 @@ func Sync(ticker string) {
 			}
 			cur = curRe
 		}
-		prices := make([]models.Price, len(pricesRaw))
+		prices := make([]models.Price, 0, len(pricesRaw))
 
 		for _, priceRaw := range pricesRaw {
 			if inst.Currency != priceRaw.Currency {
-				break
+				continue
 			}
 			price := models.Price{
-				Price:  float64(priceRaw.Price),
+				SecID:  inst.SecID,
+				Price:  priceRaw.Price,
 				Volume: priceRaw.Volume,
 				Date:   priceRaw.Date,
 				ISIN:   inst.ISIN,
 			}
 			prices = append(prices, price)
 		}
-		s.AddPrices(prices)
+		err = s.AddPrices(prices)
+		if err = s.AddPrices(prices); err != nil {
+			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error add", len(prices), "prices for", ticker, "to storage:", err)
+		} else {
+			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success add", len(prices), "prices for", ticker, "to storage")
+		}
 	}
 }
