@@ -52,7 +52,7 @@ func Sync(ticker string) {
 		var pricesRaw []priceInternal
 
 		for cur := 0; ; {
-			pr, curRe, err := fetchFromAPI(client, from, ticker, cur)
+			pr, curRe, err := fetchFromAPI(client, from, inst.Ticker, cur)
 			if err != nil {
 				break
 			}
@@ -63,7 +63,7 @@ func Sync(ticker string) {
 			cur = curRe
 		}
 		prices := make([]models.Price, 0, len(pricesRaw))
-
+		var lastDate time.Time
 		for _, priceRaw := range pricesRaw {
 			if inst.Currency != priceRaw.Currency {
 				continue
@@ -75,13 +75,18 @@ func Sync(ticker string) {
 				Date:   priceRaw.Date,
 				ISIN:   inst.ISIN,
 			}
+			if priceRaw.Date.After(lastDate) {
+				lastDate = priceRaw.Date
+			}
 			prices = append(prices, price)
 		}
-		err = s.AddPrices(prices)
-		if err = s.AddPrices(prices); err != nil {
-			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error add", len(prices), "prices for", ticker, "to storage:", err)
-		} else {
-			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success add", len(prices), "prices for", ticker, "to storage")
+		if len(prices) > 0 {
+			if err = s.AddPrices(prices); err != nil {
+				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error add", len(prices), "prices for", ticker, "to storage:", err)
+			} else {
+				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success add", len(prices), "prices for", ticker, "to storage")
+				s.SetInstrumentPriceUptdTime(inst.SecID, lastDate.AddDate(0, 0, 1))
+			}
 		}
 	}
 }

@@ -25,6 +25,9 @@ func (db Db) AddPrices(prices []models.Price) error {
 	if pgerr.Code == "23503" {
 		return fmt.Errorf("could not add prices: error in column %s", pgerr.ColumnName)
 	}
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
