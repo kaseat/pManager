@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/kaseat/pManager/models/currency"
@@ -15,6 +16,13 @@ type priceInternal struct {
 	Date     time.Time
 	Price    float64
 	Volume   int
+}
+
+type issSecurity struct {
+	Boards        map[string]currency.Type
+	ISIN          string
+	IsBond        bool
+	BondInitPrice float64
 }
 
 func fetchFromAPI(client *http.Client, from time.Time, ticker string, cursor int) ([]priceInternal, int, error) {
@@ -86,4 +94,67 @@ func fetchFromAPI(client *http.Client, from time.Time, ticker string, cursor int
 	}
 	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success load", len(prices), "prices for", ticker)
 	return prices, cursor, nil
+}
+
+func getSecurityInfo(client *http.Client, ticker string) (issSecurity, error) {
+	securitiesURI := "https://iss.moex.com/iss/securities/%s.json?iss.meta=off"
+	url := fmt.Sprintf(securitiesURI, ticker)
+	var security issSecurity
+	response, err := client.Get(url)
+	if err != nil {
+		fmt.Println(err)
+		return security, err
+	}
+	defer response.Body.Close()
+
+	responseBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println(err)
+		return security, err
+	}
+
+	var rawResponse struct {
+		Description struct {
+			Data [][]interface{} `json:"data"`
+		} `json:"description"`
+		Boards struct {
+			Data [][]interface{} `json:"data"`
+		} `json:"boards"`
+	}
+
+	err = json.Unmarshal(responseBytes, &rawResponse)
+	if err != nil {
+		fmt.Println(err)
+		return security, err
+	}
+
+	for _, description := range rawResponse.Description.Data {
+		if description[0] == "ISIN" {
+			security.ISIN = description[2].(string)
+		}
+		if description[0] == "INITIALFACEVALUE" {
+			security.IsBond = true
+			startPrice, err := strconv.ParseFloat(description[2].(string), 64)
+			if err != nil {
+				fmt.Println(err)
+				return security, err
+			}
+			security.BondInitPrice = startPrice
+		}
+	}
+
+	security.Boards = map[string]currency.Type{}
+	for _, boardInfo := range rawResponse.Boards.Data {
+		if security.IsBond {
+			if boardInfo[5] == "bonds" && boardInfo[7] == "stock" {
+				security.Boards[boardInfo[1].(string)] = currency.Type(boardInfo[15].(string))
+			}
+		} else {
+			if boardInfo[5] == "shares" && boardInfo[7] == "stock" {
+				security.Boards[boardInfo[1].(string)] = currency.Type(boardInfo[15].(string))
+			}
+		}
+	}
+
+	return security, nil
 }
