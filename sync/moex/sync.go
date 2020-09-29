@@ -44,39 +44,45 @@ func Sync(ticker string) {
 		return
 	}
 
-	for _, inst := range instrumentsToSync {
-		from := inst.PriceUptdTime
+	for _, instrument := range instrumentsToSync {
+		securityInfo, err := getSecurityInfo(client, instrument.Ticker)
+		if err != nil {
+			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error get instrument info:", err)
+			continue
+		}
+
+		from := instrument.PriceUptdTime
 		if from.IsZero() {
 			from = time.Date(2019, time.May, 1, 0, 0, 0, 0, time.UTC)
 		}
 		var pricesRaw []priceInternal
 
-		for cur := 0; ; {
-			pr, curRe, err := fetchFromAPI(client, from, inst.Ticker, cur)
+		for cursor := 0; ; {
+			rawPrice, cursorAfterFetch, err := fetchFromAPI(client, from, securityInfo, cursor)
 			if err != nil {
 				break
 			}
-			pricesRaw = append(pricesRaw, pr...)
-			if curRe == 0 {
+			pricesRaw = append(pricesRaw, rawPrice...)
+			if cursorAfterFetch == 0 {
 				break
 			}
-			cur = curRe
+			cursor = cursorAfterFetch
 		}
 		prices := make([]models.Price, 0, len(pricesRaw))
 		var lastDate time.Time
-		for _, priceRaw := range pricesRaw {
-			if inst.Currency != priceRaw.Currency {
+		for _, rawPrice := range pricesRaw {
+			if instrument.Currency != rawPrice.Currency {
 				continue
 			}
 			price := models.Price{
-				SecID:  inst.SecID,
-				Price:  priceRaw.Price,
-				Volume: priceRaw.Volume,
-				Date:   priceRaw.Date,
-				ISIN:   inst.ISIN,
+				SecID:  instrument.SecID,
+				Price:  rawPrice.Price,
+				Volume: rawPrice.Volume,
+				Date:   rawPrice.Date,
+				ISIN:   instrument.ISIN,
 			}
-			if priceRaw.Date.After(lastDate) {
-				lastDate = priceRaw.Date
+			if rawPrice.Date.After(lastDate) {
+				lastDate = rawPrice.Date
 			}
 			prices = append(prices, price)
 		}
@@ -85,7 +91,7 @@ func Sync(ticker string) {
 				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error add", len(prices), "prices for", ticker, "to storage:", err)
 			} else {
 				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success add", len(prices), "prices for", ticker, "to storage")
-				s.SetInstrumentPriceUptdTime(inst.SecID, lastDate.AddDate(0, 0, 1))
+				s.SetInstrumentPriceUptdTime(instrument.SecID, lastDate.AddDate(0, 0, 1))
 			}
 		}
 	}

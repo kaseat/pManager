@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/kaseat/pManager/models/currency"
@@ -19,19 +18,26 @@ type priceInternal struct {
 }
 
 type issSecurity struct {
-	Boards        map[string]currency.Type
-	ISIN          string
-	IsBond        bool
-	BondInitPrice float64
+	Boards map[string]currency.Type
+	ISIN   string
+	Ticker string
+	IsBond bool
 }
 
-func fetchFromAPI(client *http.Client, from time.Time, ticker string, cursor int) ([]priceInternal, int, error) {
-	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Start fetching prices for", ticker, "from", cursor)
-	columns := "history.columns=BOARDID,TRADEDATE,LEGALCLOSEPRICE,VOLUME"
+func fetchFromAPI(client *http.Client, from time.Time, sec issSecurity, cursor int) ([]priceInternal, int, error) {
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Start fetching prices for", sec.Ticker, "from", cursor)
+	var board string
+	if sec.IsBond {
+		board = "bonds"
+	} else {
+		board = "shares"
+	}
+	columns := "history.columns=BOARDID,TRADEDATE,LEGALCLOSEPRICE,VOLUME,FACEVALUE"
 	fromStr := fmt.Sprintf("from=%s", from.Format("2006-01-02"))
 	start := fmt.Sprintf("start=%d", cursor)
-	url := fmt.Sprintf("http://iss.moex.com/iss/history/engines/stock/markets/shares/securities/%s.json?iss.meta=off", ticker)
-	url = fmt.Sprintf("%s&%s&%s&%s", url, columns, fromStr, start)
+	url := "http://iss.moex.com/iss/history/engines/stock/markets"
+	url = fmt.Sprintf("%s/%s/securities/%s.json", url, board, sec.Ticker)
+	url = fmt.Sprintf("%s?iss.meta=off&%s&%s&%s", url, columns, fromStr, start)
 
 	resp, err := client.Get(url)
 	if err != nil {
@@ -64,26 +70,29 @@ func fetchFromAPI(client *http.Client, from time.Time, ticker string, cursor int
 	prices := make([]priceInternal, len(rawResponse.History.Data))
 
 	for i, rawPrice := range rawResponse.History.Data {
-		var curr currency.Type
-		if rawPrice[0] == "TQTD" ||
-			rawPrice[0] == "TQBD" ||
-			rawPrice[0] == "EQTD" {
-			curr = currency.USD
-		} else if rawPrice[0] == "TQBE" ||
-			rawPrice[0] == "TQTE" ||
-			rawPrice[0] == "EQTU" {
-			curr = currency.EUR
-		} else {
-			curr = currency.RUB
-		}
-
+		curr := sec.Boards[rawPrice[0].(string)]
 		dtime, _ := time.Parse("2006-01-02", rawPrice[1].(string))
+		var priceValue float64
+		if rawPrice[2] == nil {
+			continue
+		}
+		if sec.IsBond {
+			priceValue = rawPrice[2].(float64) * rawPrice[4].(float64) / 100
+		} else {
+			priceValue = rawPrice[2].(float64)
+		}
+		var volValue int
+		if rawPrice[3] == nil {
+			volValue = 0
+		} else {
+			volValue = int(rawPrice[3].(float64))
+		}
 
 		price := priceInternal{
 			Currency: curr,
 			Date:     dtime,
-			Price:    rawPrice[2].(float64),
-			Volume:   int(rawPrice[3].(float64)),
+			Price:    priceValue,
+			Volume:   volValue,
 		}
 		prices[i] = price
 	}
@@ -92,7 +101,7 @@ func fetchFromAPI(client *http.Client, from time.Time, ticker string, cursor int
 	} else {
 		cursor = 0
 	}
-	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success load", len(prices), "prices for", ticker)
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success load", len(prices), "prices for", sec.Ticker)
 	return prices, cursor, nil
 }
 
@@ -129,17 +138,14 @@ func getSecurityInfo(client *http.Client, ticker string) (issSecurity, error) {
 	}
 
 	for _, description := range rawResponse.Description.Data {
+		if description[0] == "SECID" {
+			security.Ticker = description[2].(string)
+		}
 		if description[0] == "ISIN" {
 			security.ISIN = description[2].(string)
 		}
 		if description[0] == "INITIALFACEVALUE" {
 			security.IsBond = true
-			startPrice, err := strconv.ParseFloat(description[2].(string), 64)
-			if err != nil {
-				fmt.Println(err)
-				return security, err
-			}
-			security.BondInitPrice = startPrice
 		}
 	}
 
