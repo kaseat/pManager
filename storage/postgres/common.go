@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -14,7 +15,7 @@ func (db *Db) Init(config Config) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Init db ok")
+	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Init postgres ok")
 	db.connection = conn
 	return nil
 }
