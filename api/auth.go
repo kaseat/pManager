@@ -50,7 +50,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	claims := &Claims{
 		Username: u.Username,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(50 * time.Minute).Unix(),
+			ExpiresAt: time.Now().Add(720 * time.Hour).Unix(),
 		},
 	}
 
@@ -100,7 +100,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	claims := &Claims{
 		Username: u.Username,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(50 * time.Minute).Unix(),
+			ExpiresAt: time.Now().Add(720 * time.Minute).Unix(),
 		},
 	}
 
