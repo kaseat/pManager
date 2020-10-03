@@ -14,7 +14,7 @@ import (
 var isSync int32
 
 // Sync starts moex sync
-func Sync(ticker string) {
+func Sync(ticker string, httpClient *http.Client) {
 	defer func() {
 		atomic.StoreInt32(&isSync, 0)
 		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "End sync MOEX")
@@ -26,8 +26,6 @@ func Sync(ticker string) {
 		return
 	}
 	atomic.StoreInt32(&isSync, 1)
-
-	client := &http.Client{}
 
 	s := storage.GetStorage()
 
@@ -45,7 +43,7 @@ func Sync(ticker string) {
 	}
 
 	for _, instrument := range instrumentsToSync {
-		securityInfo, err := getSecurityInfo(client, instrument.Ticker)
+		securityInfo, err := getSecurityInfo(httpClient, instrument.Ticker)
 		if err != nil {
 			fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error get instrument info:", err)
 			continue
@@ -58,7 +56,7 @@ func Sync(ticker string) {
 		var pricesRaw []priceInternal
 
 		for cursor := 0; ; {
-			rawPrice, cursorAfterFetch, err := fetchFromAPI(client, from, securityInfo, cursor)
+			rawPrice, cursorAfterFetch, err := fetchFromAPI(httpClient, from, securityInfo, cursor)
 			if err != nil {
 				break
 			}
