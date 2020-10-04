@@ -17,7 +17,7 @@ import (
 var isSync int32
 
 // Sync starts spbex sync
-func Sync(ticker string, from, to time.Time) {
+func Sync(ticker string, httpClient *http.Client) {
 	defer func() {
 		atomic.StoreInt32(&isSync, 0)
 		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "End sync SPBEX")
@@ -25,7 +25,7 @@ func Sync(ticker string, from, to time.Time) {
 	fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Begin sync SPBEX")
 	if atomic.LoadInt32(&isSync) == 1 {
 		err := errors.New("SPBEX sync already in process")
-		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync instruments:", err)
+		fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error sync prices:", err)
 		return
 	}
 	atomic.StoreInt32(&isSync, 1)
@@ -46,19 +46,17 @@ func Sync(ticker string, from, to time.Time) {
 	}
 
 	for _, instrument := range instrumentsToSync {
+
+		from := instrument.PriceUptdTime
 		if from.IsZero() {
-			from = time.Now().AddDate(-1, 0, 0)
-		}
-		if to.IsZero() {
-			to = time.Now()
+			from = time.Date(2019, time.May, 1, 0, 0, 0, 0, time.UTC)
 		}
 
 		url := "https://investcab.ru/api/chistory?symbol=%s&resolution=D"
 		url = fmt.Sprintf(url, instrument.Ticker)
-		url += fmt.Sprintf("&from=%d&to=%d", from.Unix(), to.Unix())
+		url += fmt.Sprintf("&from=%d&to=%d", from.Unix(), time.Now().Unix())
 
-		client := &http.Client{}
-		resp, err := client.Get(url)
+		resp, err := httpClient.Get(url)
 		if err != nil {
 			fmt.Println(err)
 			return
