@@ -79,13 +79,13 @@ func Sync(ticker string, httpClient *http.Client) {
 			return
 		}
 
-		prices := make([]struct {
+		pricesInt := make([]struct {
 			Date  time.Time
 			Price float64
 		}, len(rawPrices.Price))
 
 		for i := 0; i < len(rawPrices.Price); i++ {
-			prices[i] = struct {
+			pricesInt[i] = struct {
 				Date  time.Time
 				Price float64
 			}{
@@ -94,7 +94,29 @@ func Sync(ticker string, httpClient *http.Client) {
 			}
 		}
 
-		fmt.Println(prices)
-	}
+		prices := make([]models.Price, 0, len(pricesInt))
+		var lastDate time.Time
+		for _, rawPrice := range pricesInt {
+			price := models.Price{
+				SecID:  instrument.SecID,
+				Price:  rawPrice.Price,
+				Volume: 0,
+				Date:   rawPrice.Date,
+				ISIN:   instrument.ISIN,
+			}
+			if rawPrice.Date.After(lastDate) {
+				lastDate = rawPrice.Date
+			}
+			prices = append(prices, price)
+		}
 
+		if len(prices) > 0 {
+			if err = s.AddPrices(prices); err != nil {
+				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error add", len(prices), "prices for", ticker, "to storage:", err)
+			} else {
+				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success add", len(prices), "prices for", ticker, "to storage")
+				s.SetInstrumentPriceUptdTime(instrument.SecID, lastDate.AddDate(0, 0, 1))
+			}
+		}
+	}
 }
