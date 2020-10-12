@@ -112,9 +112,9 @@ func Sync(ticker string, httpClient *http.Client) {
 
 		if len(prices) > 0 {
 			if err = s.AddPrices(prices); err != nil {
-				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error add", len(prices), "prices for", ticker, "to storage:", err)
+				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error add", len(prices), "prices for", instrument.Ticker, "to storage:", err)
 			} else {
-				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success add", len(prices), "prices for", ticker, "to storage")
+				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Success add", len(prices), "prices for", instrument.Ticker, "to storage")
 				s.SetInstrumentPriceUptdTime(instrument.SecID, lastDate.AddDate(0, 0, 1))
 			}
 		}
