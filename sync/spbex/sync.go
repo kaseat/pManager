@@ -51,10 +51,14 @@ func Sync(ticker string, httpClient *http.Client) {
 		if from.IsZero() {
 			from = time.Date(2019, time.May, 1, 0, 0, 0, 0, time.UTC)
 		}
+		to := today(time.Now().UTC())
+		if from.After(to) {
+			continue
+		}
 
 		url := "https://investcab.ru/api/chistory?symbol=%s&resolution=D"
 		url = fmt.Sprintf(url, instrument.Ticker)
-		url += fmt.Sprintf("&from=%d&to=%d", from.Unix(), time.Now().Unix())
+		url += fmt.Sprintf("&from=%d&to=%d", from.Unix(), to.Unix())
 
 		resp, err := httpClient.Get(url)
 		if err != nil {
@@ -119,4 +123,10 @@ func Sync(ticker string, httpClient *http.Client) {
 			}
 		}
 	}
+
+}
+
+func today(t time.Time) time.Time {
+	y, m, d := t.Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, t.Location())
 }
