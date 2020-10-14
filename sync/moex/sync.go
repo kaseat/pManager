@@ -42,6 +42,7 @@ func Sync(ticker string, httpClient *http.Client) {
 		return
 	}
 
+	today := today()
 	for _, instrument := range instrumentsToSync {
 		securityInfo, err := getSecurityInfo(httpClient, instrument.Ticker)
 		if err != nil {
@@ -53,6 +54,11 @@ func Sync(ticker string, httpClient *http.Client) {
 		if from.IsZero() {
 			from = time.Date(2019, time.May, 1, 0, 0, 0, 0, time.UTC)
 		}
+
+		if from.After(today) {
+			continue
+		}
+
 		var pricesRaw []priceInternal
 
 		for cursor := 0; ; {
@@ -93,4 +99,10 @@ func Sync(ticker string, httpClient *http.Client) {
 			}
 		}
 	}
+}
+
+func today() time.Time {
+	now := time.Now().UTC()
+	y, m, d := now.Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, now.Location()).Add(time.Hour * -1)
 }
