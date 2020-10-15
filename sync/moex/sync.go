@@ -72,7 +72,8 @@ func Sync(ticker string, httpClient *http.Client) {
 			}
 			cursor = cursorAfterFetch
 		}
-		prices := make([]models.Price, 0, len(pricesRaw))
+
+		distinctPrices := make(map[time.Time]models.Price)
 		var lastDate time.Time
 		for _, rawPrice := range pricesRaw {
 			if instrument.Currency != rawPrice.Currency {
@@ -88,8 +89,20 @@ func Sync(ticker string, httpClient *http.Client) {
 			if rawPrice.Date.After(lastDate) {
 				lastDate = rawPrice.Date
 			}
+			if val, ok := distinctPrices[rawPrice.Date]; ok {
+				val.Volume += rawPrice.Volume
+				distinctPrices[rawPrice.Date] = val
+			} else {
+				distinctPrices[rawPrice.Date] = price
+			}
+		}
+
+		prices := make([]models.Price, 0, len(distinctPrices))
+		for _, price := range distinctPrices {
 			prices = append(prices, price)
 		}
+		fmt.Println(len(pricesRaw), len(prices))
+
 		if len(prices) > 0 {
 			if err = s.AddPrices(prices); err != nil {
 				fmt.Println(time.Now().Format("2006-02-01 15:04:05"), "Error add", len(prices), "prices for", ticker, "to storage:", err)
