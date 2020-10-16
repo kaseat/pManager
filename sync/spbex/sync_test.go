@@ -11,6 +11,6 @@ func TestSpbexSync(t *testing.T) {
 		Timeout: time.Second * 5,
 	}
 
-	Sync("MSFT", client)
+	Sync("", client)
 	t.Fail()
 }
